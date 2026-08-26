@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Demo Absen 1.4</title>
+  <title>DEMO KaliberAbsen14</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
@@ -223,7 +223,7 @@
           </div>
         </div>
       </div>
-      <span class="letter-anim">A</span><span class="letter-anim">B</span><span class="letter-anim">S</span><span class="letter-anim">E</span><span class="letter-anim">N</span><span class="letter-anim">&nbsp;</span><span class="letter-anim">' '</span><span class="letter-anim">1</span><span class="letter-anim">.</span><span class="letter-anim">4</span><span class="letter-anim">.</span><span class="letter-anim">1 Demo</span>
+      <span class="letter-anim">A</span><span class="letter-anim">B</span><span class="letter-anim">S</span><span class="letter-anim">E</span><span class="letter-anim">N</span><span class="letter-anim">&nbsp;</span><span class="letter-anim">' '</span><span class="letter-anim">1</span><span class="letter-anim">.</span><span class="letter-anim">4</span><span class="letter-anim">.</span><span class="letter-anim">0</span>
             <p class="text-gray-500 text-sm">Masuk dengan NIP & Password</p>    
     </div>
 
@@ -1612,10 +1612,13 @@
     }
 
     function loadStatusBeranda() {
+      // Muat tabel bawah tanpa menunggu status atas
       loadDaftarKehadiranHariIni(); 
       
-      document.getElementById('statusAbsenBadge').innerText = "Memuat...";
-      document.getElementById('statusAbsenBadge').className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-400";
+      const badge = document.getElementById('statusAbsenBadge');
+      badge.innerText = "Memuat...";
+      badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-400";
+      
       document.getElementById('panelKonfirmasi').classList.add('hidden-view');
       document.getElementById('panelPulang').classList.add('hidden-view');
       resetFotoKamera();
@@ -1623,84 +1626,98 @@
       if(document.getElementById('btnKonfirmasiMasuk')) document.getElementById('btnKonfirmasiMasuk').disabled = false;
       if(document.getElementById('btnKonfirmasiPulang')) document.getElementById('btnKonfirmasiPulang').disabled = false;
 
-      gasApi('getDaftarPengajuan', { role: currentUser.role, nip: currentUser.nip }).then(pengajuanData => {
-          if(!pengajuanData) pengajuanData = [];
+      // PARALEL: Tarik data pengajuan & status secara BERSAMAAN agar waktu tunggu terpotong setengahnya
+      Promise.all([
+         gasApi('getDaftarPengajuan', { role: currentUser.role, nip: currentUser.nip }),
+         gasApi('getStatusHariIni', { nip: currentUser.nip })
+      ]).then(results => {
+          let pengajuanData = results[0];
+          let statusRes = results[1];
+
+          // PROTEKSI ERROR PENGAJUAN
+          if (!pengajuanData || (typeof pengajuanData === 'object' && pengajuanData.success === false)) {
+             pengajuanData = [];
+          }
           globalPengajuanData = pengajuanData;
           
           const now = new Date();
           const todayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-          
           isPengajuanLocked = pengajuanData.some(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === todayFormatted && p.jenis !== 'Pulang Alasan Dinas' && (p.status === 'Menunggu' || p.status === 'Disetujui'));
 
-          gasApi('getStatusHariIni', { nip: currentUser.nip }).then(status => {
-            const badge = document.getElementById('statusAbsenBadge');
-            badge.innerText = status;
+          // PROTEKSI ERROR STATUS [object Object]
+          let status = statusRes;
+          if (typeof statusRes === 'object' && statusRes.success === false) {
+             badge.innerText = "Jaringan Lambat";
+             badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-red-500";
+             console.error("Gagal muat status:", statusRes.message);
+             return; // Berhenti di sini jika server timeout
+          }
+
+          badge.innerText = status;
+          
+          if(status === 'Belum Scan' || status === 'Belum Konfirmasi') {
+              badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-500";
+          }
+          else if(status === 'Pending' || status === 'Masuk') {
+            if(status === 'Pending') {
+              badge.className = "inline-block px-4 py-2 rounded-full text-gray-800 font-bold bg-yellow-400";
+              document.getElementById('panelKonfirmasi').classList.remove('hidden-view');
+              checkButtonRadiusState(); 
+            }
+            if(status === 'Masuk') {
+              badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-blue-500";
+              document.getElementById('panelPulang').classList.remove('hidden-view');
+            }
             
-            if(status === 'Belum Scan' || status === 'Belum Konfirmasi') badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-500";
-            if(status === 'Pending' || status === 'Masuk') {
-              if(status === 'Pending') {
-                badge.className = "inline-block px-4 py-2 rounded-full text-gray-800 font-bold bg-yellow-400";
-                document.getElementById('panelKonfirmasi').classList.remove('hidden-view');
-                checkButtonRadiusState(); 
-              }
-              if(status === 'Masuk') {
-                badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-blue-500";
-                document.getElementById('panelPulang').classList.remove('hidden-view');
-              }
-              
-              gasApi('getInfoShiftAktif', { nip: currentUser.nip }).then(info => {
-                 let textShift = "";
-                 if (info) {
-                   currentActiveShiftDate = info.tgl; 
-                   const now = new Date();
-                   const dateParts = info.tgl.split('-');
-                   const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-                   const tglStrObj = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                   
-                   const yesterday = new Date(now);
-                   yesterday.setDate(yesterday.getDate() - 1);
-                   const isKemarin = (dateObj.getDate() === yesterday.getDate() && dateObj.getMonth() === yesterday.getMonth() && dateObj.getFullYear() === yesterday.getFullYear());
+            // Tarik Info Shift Aktif
+            gasApi('getInfoShiftAktif', { nip: currentUser.nip }).then(info => {
+               // Proteksi Error Info
+               if (!info || (typeof info === 'object' && info.success === false)) return;
 
-                   if (info.keterangan) textShift = info.keterangan;
-                   else textShift = `${tglStrObj} (Shift: ${info.shift})`;
+               let textShift = "";
+               if (info.tgl) {
+                 currentActiveShiftDate = info.tgl; 
+                 const dateParts = info.tgl.split('-');
+                 const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                 const tglStrObj = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                 const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+                 const isKemarin = (dateObj.getDate() === yesterday.getDate() && dateObj.getMonth() === yesterday.getMonth() && dateObj.getFullYear() === yesterday.getFullYear());
 
-                   if (isKemarin) {
-                       textShift = `<span class="text-red-600 font-bold">${textShift}</span><br><span class="text-[11px] text-red-500 mt-1 flex items-start gap-1"><i data-lucide="alert-circle" class="w-3 h-3 mt-0.5"></i> Ini adalah shift lintas hari yang belum diselesaikan (Checkout).</span>`;
-                   }
-                   
-                   if (status === 'Masuk' && currentActiveShiftDate) {
-                       const pendingDinas = globalPengajuanData.find(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === currentActiveShiftDate && p.jenis === 'Pulang Alasan Dinas' && p.status === 'Menunggu');
-                       const rejectedDinas = globalPengajuanData.find(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === currentActiveShiftDate && p.jenis === 'Pulang Alasan Dinas' && p.status === 'Ditolak');
+                 if (info.keterangan) textShift = info.keterangan;
+                 else textShift = `${tglStrObj} (Shift: ${info.shift})`;
 
-                       if (pendingDinas) {
-                           document.getElementById('wrapTombolPulang').classList.add('hidden-view');
-                           document.getElementById('msgPulangDinas').classList.remove('hidden-view');
-                           if(document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.add('hidden-view');
-                       } else {
-                           document.getElementById('wrapTombolPulang').classList.remove('hidden-view');
-                           document.getElementById('msgPulangDinas').classList.add('hidden-view');
-                           if (rejectedDinas && document.getElementById('msgDitolakDinas')) {
-                               document.getElementById('msgDitolakDinas').classList.remove('hidden-view');
-                           } else if (document.getElementById('msgDitolakDinas')) {
-                               document.getElementById('msgDitolakDinas').classList.add('hidden-view');
-                           }
-                       }
-                   }
-                 } else {
-                   currentActiveShiftDate = null;
-                   const now = new Date();
-                   textShift = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                 if (isKemarin) {
+                     textShift = `<span class="text-red-600 font-bold">${textShift}</span><br><span class="text-[11px] text-red-500 mt-1 flex items-start gap-1"><i data-lucide="alert-circle" class="w-3 h-3 mt-0.5"></i> Ini adalah shift lintas hari yang belum diselesaikan (Checkout).</span>`;
                  }
                  
-                 if(document.getElementById('txtTanggalShift')) document.getElementById('txtTanggalShift').innerHTML = textShift;
-                 if(document.getElementById('txtTanggalShiftMasuk')) document.getElementById('txtTanggalShiftMasuk').innerHTML = textShift;
-                 lucide.createIcons();
-              });
-            }
-            if(status === 'Hadir') {
-              badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-green-500";
-            }
-          });
+                 if (status === 'Masuk' && currentActiveShiftDate) {
+                     const pendingDinas = globalPengajuanData.find(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === currentActiveShiftDate && p.jenis === 'Pulang Alasan Dinas' && p.status === 'Menunggu');
+                     const rejectedDinas = globalPengajuanData.find(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === currentActiveShiftDate && p.jenis === 'Pulang Alasan Dinas' && p.status === 'Ditolak');
+
+                     if (pendingDinas) {
+                         document.getElementById('wrapTombolPulang').classList.add('hidden-view');
+                         document.getElementById('msgPulangDinas').classList.remove('hidden-view');
+                         if(document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.add('hidden-view');
+                     } else {
+                         document.getElementById('wrapTombolPulang').classList.remove('hidden-view');
+                         document.getElementById('msgPulangDinas').classList.add('hidden-view');
+                         if (rejectedDinas && document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.remove('hidden-view');
+                         else if (document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.add('hidden-view');
+                     }
+                 }
+               } else {
+                 currentActiveShiftDate = null;
+                 textShift = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+               }
+               
+               if(document.getElementById('txtTanggalShift')) document.getElementById('txtTanggalShift').innerHTML = textShift;
+               if(document.getElementById('txtTanggalShiftMasuk')) document.getElementById('txtTanggalShiftMasuk').innerHTML = textShift;
+               lucide.createIcons();
+            });
+          }
+          else if(status === 'Hadir') {
+            badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-green-500";
+          }
       });
     }
 
