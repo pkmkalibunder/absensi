@@ -1139,7 +1139,7 @@
     // ==========================================
     // 1. KONFIGURASI API & FETCH WRAPPER (ANTI HANG)
     // ==========================================
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwGQ8LIOfaE0sqBq9YegRimJdnYCmXw_J7OdeMthdIqWE8uFP5om232t4v7korSia9e/exec'; // Pastikan URL Anda benar
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxnh4O8evA3h8tZI8zbdL73EECLKbt6UruTpWSygbhHA3MC-Qu0-6lcKyMQtHlmvqiB/exec'; // Pastikan URL Anda benar
 
     async function gasApi(action, params = {}) {
       // Buat controller untuk membatasi waktu loading (Timeout 15 detik)
@@ -1543,10 +1543,11 @@
        if (!navigator.geolocation) { el.innerText = "GPS tidak didukung"; return; }
        if (!globalLokasi || globalLokasi.lat === 0) { el.innerText = "Pusat Koordinat belum diset Admin"; return; }
        
+       // Opsi tambahan untuk mencegah pencarian GPS yang menggantung/lama
        const options = {
           enableHighAccuracy: true,
-          timeout: 10000, 
-          maximumAge: 60000 // PERCEPATAN: Gunakan cache lokasi 60 detik terakhir
+          timeout: 10000, // Batas waktu maksimal 10 detik
+          maximumAge: 5000 // Gunakan cache lokasi maksimal 5 detik yang lalu
        };
 
        navigator.geolocation.getCurrentPosition(pos => {
@@ -1554,15 +1555,21 @@
           el.innerText = jarak + " meter";
           currentJarakGps = jarak;
           
-          const dalamRadius = jarak <= 100;
+          const dalamRadius = jarak <= 100; // Maksimal 100 meter
           el.className = dalamRadius ? "text-lg font-bold text-green-600" : "text-lg font-bold text-red-500";
           checkButtonRadiusState();
 
        }, err => {
-          if (err.code === 1) el.innerText = "Akses GPS ditolak browser";
-          else if (err.code === 2) el.innerText = "Sinyal GPS hilang/tidak tersedia";
-          else if (err.code === 3) el.innerText = "Pencarian GPS Timeout";
-          else el.innerText = "Gagal mengakses GPS";
+          // Tangkap jenis error spesifik agar user tahu masalahnya
+          if (err.code === 1) {
+             el.innerText = "Akses GPS ditolak browser";
+          } else if (err.code === 2) {
+             el.innerText = "Sinyal GPS hilang/tidak tersedia";
+          } else if (err.code === 3) {
+             el.innerText = "Pencarian GPS Timeout (Sinyal lemah)";
+          } else {
+             el.innerText = "Gagal mengakses GPS";
+          }
        }, options);
     }
 
@@ -1611,12 +1618,14 @@
     }
 
     function loadStatusBeranda() {
-      loadDaftarKehadiranHariIni(); // Muat tabel bawah paralel
+      // Muat tabel bawah tanpa menunggu status atas
+      loadDaftarKehadiranHariIni(); 
       
       const badge = document.getElementById('statusAbsenBadge');
+      // Tambahkan animasi loading saat direfresh
       badge.innerHTML = "Memuat... <div class='loader !w-3 !h-3 !border-2 !border-t-white inline-block ml-1'></div>";
       badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-400";
-      badge.onclick = null;
+      badge.onclick = null; // Reset efek klik sebelumnya
       badge.title = "";
       
       document.getElementById('panelKonfirmasi').classList.add('hidden-view');
@@ -1626,19 +1635,39 @@
       if(document.getElementById('btnKonfirmasiMasuk')) document.getElementById('btnKonfirmasiMasuk').disabled = false;
       if(document.getElementById('btnKonfirmasiPulang')) document.getElementById('btnKonfirmasiPulang').disabled = false;
 
-      // HANYA 1 API CALL SUPER CEPAT
-      gasApi('getBerandaState', { nip: currentUser.nip }).then(res => {
-          if (!res || res.success === false) {
+      // PARALEL: Tarik data pengajuan & status secara BERSAMAAN
+      Promise.all([
+         gasApi('getDaftarPengajuan', { role: currentUser.role, nip: currentUser.nip }),
+         gasApi('getStatusHariIni', { nip: currentUser.nip })
+      ]).then(results => {
+          let pengajuanData = results[0];
+          let statusRes = results[1];
+
+          // PROTEKSI ERROR PENGAJUAN
+          if (!pengajuanData || (typeof pengajuanData === 'object' && pengajuanData.success === false)) {
+             pengajuanData = [];
+          }
+          globalPengajuanData = pengajuanData;
+          
+          const now = new Date();
+          const todayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          isPengajuanLocked = pengajuanData.some(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === todayFormatted && p.jenis !== 'Pulang Alasan Dinas' && (p.status === 'Menunggu' || p.status === 'Disetujui'));
+
+          // ==========================================
+          // PROTEKSI ERROR STATUS (JARINGAN LAMBAT / TIMEOUT)
+          // ==========================================
+          let status = statusRes;
+          if (typeof statusRes === 'object' && statusRes.success === false) {
              badge.innerHTML = "<i data-lucide='wifi-off' class='w-4 h-4 inline-block mr-1 mb-0.5'></i> Jaringan Lambat";
+             // Buat jadi kursor tombol agar karyawan tahu ini bisa diklik
              badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-red-500 cursor-pointer shadow-md hover:bg-red-600 transition";
              badge.title = "Klik untuk memuat ulang status";
-             badge.onclick = loadStatusBeranda;
+             badge.onclick = loadStatusBeranda; // Jika diklik, jalankan ulang fungsi ini
+             console.error("Gagal muat status:", statusRes.message);
              lucide.createIcons();
-             return;
+             return; // Hentikan proses render UI absen
           }
 
-          let status = res.status;
-          isPengajuanLocked = res.isPengajuanLocked;
           badge.innerText = status;
           
           if(status === 'Belum Scan' || status === 'Belum Konfirmasi') {
@@ -1655,36 +1684,50 @@
               document.getElementById('panelPulang').classList.remove('hidden-view');
             }
             
-            // Proses Shift Info dari Respon API yang sama
-            let textShift = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            if (res.shiftInfo) {
-                 currentActiveShiftDate = res.shiftInfo.tgl; 
-                 const dateParts = res.shiftInfo.tgl.split('-');
-                 const tglStrObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                 
-                 textShift = `${tglStrObj} (Shift: ${res.shiftInfo.shift})`;
+            // Tarik Info Shift Aktif
+            gasApi('getInfoShiftAktif', { nip: currentUser.nip }).then(info => {
+               if (!info || (typeof info === 'object' && info.success === false)) return;
 
-                 if (res.shiftInfo.isLintas) {
+               let textShift = "";
+               if (info.tgl) {
+                 currentActiveShiftDate = info.tgl; 
+                 const dateParts = info.tgl.split('-');
+                 const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                 const tglStrObj = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                 const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+                 const isKemarin = (dateObj.getDate() === yesterday.getDate() && dateObj.getMonth() === yesterday.getMonth() && dateObj.getFullYear() === yesterday.getFullYear());
+
+                 if (info.keterangan) textShift = info.keterangan;
+                 else textShift = `${tglStrObj} (Shift: ${info.shift})`;
+
+                 if (isKemarin) {
                      textShift = `<span class="text-red-600 font-bold">${textShift}</span><br><span class="text-[11px] text-red-500 mt-1 flex items-start gap-1"><i data-lucide="alert-circle" class="w-3 h-3 mt-0.5"></i> Ini adalah shift lintas hari yang belum diselesaikan (Checkout).</span>`;
                  }
                  
-                 if (status === 'Masuk') {
-                     if (res.statusPulangDinas === 'Menunggu') {
+                 if (status === 'Masuk' && currentActiveShiftDate) {
+                     const pendingDinas = globalPengajuanData.find(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === currentActiveShiftDate && p.jenis === 'Pulang Alasan Dinas' && p.status === 'Menunggu');
+                     const rejectedDinas = globalPengajuanData.find(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === currentActiveShiftDate && p.jenis === 'Pulang Alasan Dinas' && p.status === 'Ditolak');
+
+                     if (pendingDinas) {
                          document.getElementById('wrapTombolPulang').classList.add('hidden-view');
                          document.getElementById('msgPulangDinas').classList.remove('hidden-view');
                          if(document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.add('hidden-view');
                      } else {
                          document.getElementById('wrapTombolPulang').classList.remove('hidden-view');
                          document.getElementById('msgPulangDinas').classList.add('hidden-view');
-                         if (res.statusPulangDinas === 'Ditolak' && document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.remove('hidden-view');
+                         if (rejectedDinas && document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.remove('hidden-view');
                          else if (document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.add('hidden-view');
                      }
                  }
-            } else { currentActiveShiftDate = null; }
-            
-            if(document.getElementById('txtTanggalShift')) document.getElementById('txtTanggalShift').innerHTML = textShift;
-            if(document.getElementById('txtTanggalShiftMasuk')) document.getElementById('txtTanggalShiftMasuk').innerHTML = textShift;
-            lucide.createIcons();
+               } else {
+                 currentActiveShiftDate = null;
+                 textShift = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+               }
+               
+               if(document.getElementById('txtTanggalShift')) document.getElementById('txtTanggalShift').innerHTML = textShift;
+               if(document.getElementById('txtTanggalShiftMasuk')) document.getElementById('txtTanggalShiftMasuk').innerHTML = textShift;
+               lucide.createIcons();
+            });
           }
           else if(status === 'Hadir') {
             badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-green-500";
