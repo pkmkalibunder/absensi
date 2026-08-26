@@ -287,9 +287,15 @@
         <!-- SECTION KARYAWAN: BERANDA -->
         <section id="secKarBeranda" class="hidden-view space-y-6">
           <div class="bg-white p-6 rounded-xl shadow-sm">
-            <div class="flex justify-between items-start mb-4">
-              <h2 class="text-xl font-bold">Status Hari Ini</h2>
-              <div id="statusAbsenBadge" class="inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-400">Memuat...</div>
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-bold">Status Hari Ini</h2>
+                <!-- Tombol Refresh Baru -->
+                <button onclick="loadStatusBeranda()" class="text-blue-500 hover:bg-blue-100 p-1.5 rounded-md transition shadow-sm border border-transparent hover:border-blue-200" title="Muat Ulang Status">
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <div id="statusAbsenBadge" class="inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-400 text-sm md:text-base text-center transition-all">Memuat...</div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
@@ -1616,8 +1622,11 @@
       loadDaftarKehadiranHariIni(); 
       
       const badge = document.getElementById('statusAbsenBadge');
-      badge.innerText = "Memuat...";
+      // Tambahkan animasi loading saat direfresh
+      badge.innerHTML = "Memuat... <div class='loader !w-3 !h-3 !border-2 !border-t-white inline-block ml-1'></div>";
       badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-400";
+      badge.onclick = null; // Reset efek klik sebelumnya
+      badge.title = "";
       
       document.getElementById('panelKonfirmasi').classList.add('hidden-view');
       document.getElementById('panelPulang').classList.add('hidden-view');
@@ -1626,7 +1635,7 @@
       if(document.getElementById('btnKonfirmasiMasuk')) document.getElementById('btnKonfirmasiMasuk').disabled = false;
       if(document.getElementById('btnKonfirmasiPulang')) document.getElementById('btnKonfirmasiPulang').disabled = false;
 
-      // PARALEL: Tarik data pengajuan & status secara BERSAMAAN agar waktu tunggu terpotong setengahnya
+      // PARALEL: Tarik data pengajuan & status secara BERSAMAAN
       Promise.all([
          gasApi('getDaftarPengajuan', { role: currentUser.role, nip: currentUser.nip }),
          gasApi('getStatusHariIni', { nip: currentUser.nip })
@@ -1644,13 +1653,19 @@
           const todayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
           isPengajuanLocked = pengajuanData.some(p => p.nip === currentUser.nip && p.tgl.substring(0, 10) === todayFormatted && p.jenis !== 'Pulang Alasan Dinas' && (p.status === 'Menunggu' || p.status === 'Disetujui'));
 
-          // PROTEKSI ERROR STATUS [object Object]
+          // ==========================================
+          // PROTEKSI ERROR STATUS (JARINGAN LAMBAT / TIMEOUT)
+          // ==========================================
           let status = statusRes;
           if (typeof statusRes === 'object' && statusRes.success === false) {
-             badge.innerText = "Jaringan Lambat";
-             badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-red-500";
+             badge.innerHTML = "<i data-lucide='wifi-off' class='w-4 h-4 inline-block mr-1 mb-0.5'></i> Jaringan Lambat";
+             // Buat jadi kursor tombol agar karyawan tahu ini bisa diklik
+             badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-red-500 cursor-pointer shadow-md hover:bg-red-600 transition";
+             badge.title = "Klik untuk memuat ulang status";
+             badge.onclick = loadStatusBeranda; // Jika diklik, jalankan ulang fungsi ini
              console.error("Gagal muat status:", statusRes.message);
-             return; // Berhenti di sini jika server timeout
+             lucide.createIcons();
+             return; // Hentikan proses render UI absen
           }
 
           badge.innerText = status;
@@ -1671,7 +1686,6 @@
             
             // Tarik Info Shift Aktif
             gasApi('getInfoShiftAktif', { nip: currentUser.nip }).then(info => {
-               // Proteksi Error Info
                if (!info || (typeof info === 'object' && info.success === false)) return;
 
                let textShift = "";
