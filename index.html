@@ -1207,7 +1207,7 @@
     // ==========================================
     // 1. KONFIGURASI API & FETCH WRAPPER (ANTI HANG)
     // ==========================================
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyo-k9EhfEs0Gktvn1fptmr-_xdGkBmmasF0FRC7UYe8HUjghXS6VfcZt3BVzuSgOLK_w/exec'; // Pastikan URL Anda benar
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0g66iG6pgabQok-2zlYLiney2yGXx4SF5UzvbMU1qwwbpiUn4a2njOeAzBet6OXLSDw/exec'; // Pastikan URL Anda benar
 
     async function gasApi(action, params = {}) {
       // Buat controller untuk membatasi waktu loading (Timeout 15 detik)
@@ -2394,15 +2394,22 @@
       document.getElementById('thKoorJadwal').innerHTML = headHTML;
 
        const bHtml = listKoorKaryawanGlobal.map(u => {
-          let jRow = globalKoorJadwalBulanData.find(x => x.nip === u.nip) || { dates: {}, statusDraft: 'Belum Ada' };
+          let jRow = globalKoorJadwalBulanData.find(x => x.nip === u.nip) || { dates: {}, statusDraft: 'Belum Ada', alasanTolak: '' };
           let uStatus = jRow.statusDraft || 'Belum Ada';
+          let alasanTolak = jRow.alasanTolak || '';
           let isLocked = uStatus === 'Diterima' || uStatus === 'Menunggu';
           
           let sCol = uStatus === 'Diterima' ? 'text-green-600' : (uStatus === 'Menunggu' ? 'text-yellow-600' : (uStatus === 'Ditolak' ? 'text-red-600' : 'text-gray-500'));
+          
+          // Gabungkan Teks Status dengan Alasan (Jika Ditolak)
+          let statHtml = `<span class="font-bold ${sCol}">${uStatus}</span>`;
+          if (uStatus === 'Ditolak' && alasanTolak !== '') {
+              statHtml += `<br><span class="text-red-600 font-normal italic mt-1 flex items-start text-left leading-tight"><i data-lucide="alert-circle" class="w-3 h-3 mr-0.5 mt-0.5 flex-shrink-0"></i> ${alasanTolak}</span>`;
+          }
 
           let r = `<tr class="group hover:bg-gray-100">
              <td class="p-2 border border-gray-300 whitespace-nowrap text-sm sticky left-0 z-20 bg-white">${u.nama}<br><span class="text-[10px] text-gray-500">${u.nip}</span></td>
-             <td class="p-2 border border-gray-300 text-[10px] font-bold text-center ${sCol} bg-gray-50">${uStatus}</td>`;
+             <td class="p-2 border border-gray-300 text-[10px] text-center bg-gray-50">${statHtml}</td>`;
           
           for(let i=1; i<=jHari; i++) {
             let val = jRow.dates[i] || '';
@@ -2410,6 +2417,8 @@
             let bgClass = isLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none' : 'bg-transparent text-gray-700 focus:bg-blue-100 focus:ring-1 focus:ring-blue-500';
             r += `<td class="p-0 border border-gray-300 text-center relative"><input type="text" ${readonlyAttr} class="w-full h-full min-h-[32px] text-center ${bgClass} border-none outline-none uppercase text-xs font-bold" id="jk_${u.nip}_${i}" value="${val}"></td>`;
           }
+
+          // ... (biarkan bagian aksiHTML tetap sama) ...
 
           let aksiHTML = '';
           if (isLocked) {
@@ -3150,24 +3159,18 @@
         let tid = toastManager.show("Memuat Pengajuan Perorangan...");
         
         gasApi('getDraftJadwalPerorangan', { bln: bln, thn: thn }).then(res => {
-            // Tangkap jika terjadi error di server
-            if (!res || !res.success) {
-                toastManager.finish(tid, false, res.message || "Gagal memuat data dari server");
-                return;
-            }
+            if (!res || !res.success) { toastManager.finish(tid, false, res.message || "Gagal memuat data dari server"); return; }
             toastManager.finish(tid, true, "Selesai");
             
-            // Ambil data Array dari respons
             const data = res.data || [];
             
-            // 1. RENDER HEADER DINAMIS (Tambahkan Kolom NIP)
             let headHTML = `<tr>
                <th class="p-2 border border-gray-300 text-left whitespace-nowrap sticky left-0 z-40 bg-gray-200 shadow-sm" rowspan="2">Nama Karyawan</th>
                <th class="p-2 border border-gray-300 text-center min-w-[100px] bg-gray-200" rowspan="2">NIP</th>
                <th class="p-2 border border-gray-300 text-center min-w-[100px] bg-gray-200" rowspan="2">Unit</th>
                <th class="p-2 border border-gray-300 text-center min-w-[80px] bg-gray-200" rowspan="2">Status</th>`;
             for(let i=1; i<=jHari; i++) headHTML += `<th class="p-1 border border-gray-300 min-w-[35px] text-center bg-gray-200">${i}</th>`;
-            headHTML += `<th class="p-2 border border-gray-300 text-center min-w-[120px] bg-gray-200" rowspan="2">Aksi Approval</th></tr><tr>`;
+            headHTML += `<th class="p-2 border border-gray-300 text-center min-w-[140px] bg-gray-200" rowspan="2">Aksi Approval</th></tr><tr>`;
             for(let i=1; i<=jHari; i++) {
               const hari = getNamaHari(i, bln, thn);
               const color = hari === 'Min' ? 'text-red-500' : 'text-gray-600';
@@ -3176,10 +3179,8 @@
             headHTML += `</tr>`;
             document.getElementById('thApprPer').innerHTML = headHTML;
 
-            // 2. RENDER KONTEN TABEL
             const tb = document.getElementById('tbAdminApprPerorangan');
             if(data.length === 0) {
-                // Perlebar colspan karena kolom bertambah 1 (NIP)
                 tb.innerHTML = `<tr><td colspan="${jHari + 5}" class="p-4 text-center text-gray-500">Tidak ada pengajuan jadwal bulan ini.</td></tr>`;
                 return;
             }
@@ -3188,10 +3189,19 @@
             data.forEach(d => {
                 let sCol = d.status === 'Diterima' ? 'text-green-600' : (d.status === 'Ditolak' ? 'text-red-600' : 'text-yellow-600');
                 
-                let aksi = d.status === 'Menunggu' ? 
-                    `<button onclick="prosesApprPerorangan('${d.nip}', ${bln}, ${thn}, 'Diterima')" class="bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-green-600 mr-1 shadow-sm">Terima</button>
-                     <button onclick="prosesApprPerorangan('${d.nip}', ${bln}, ${thn}, 'Ditolak')" class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-red-600 shadow-sm">Tolak</button>` 
-                    : `<span class="text-gray-400 italic text-[10px] bg-gray-100 px-2 py-1 rounded border border-gray-200">${d.status}</span>`;
+                // LOGIKA AKSI APPROVAL
+                let aksi = '';
+                if (d.status === 'Menunggu') {
+                    aksi = `<button onclick="prosesApprPerorangan('${d.nip}', ${bln}, ${thn}, 'Diterima')" class="bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-green-600 mr-1 shadow-sm">Terima</button>
+                            <button onclick="prosesApprPerorangan('${d.nip}', ${bln}, ${thn}, 'Ditolak')" class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-red-600 shadow-sm">Tolak</button>`;
+                } else if (d.status === 'Diterima') {
+                    // Tombol tolak pembatalan jika sebelumnya sudah diterima
+                    aksi = `<button onclick="prosesApprPerorangan('${d.nip}', ${bln}, ${thn}, 'Ditolak')" class="bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded text-[10px] font-bold hover:bg-red-100 shadow-sm" title="Batalkan & Tolak Jadwal">Batalkan (Tolak)</button>`;
+                } else if (d.status === 'Ditolak') {
+                    aksi = `<span class="text-red-500 italic text-[10px] max-w-[120px] block truncate" title="${d.alasan || 'Ditolak'}"><i data-lucide="info" class="w-3 h-3 inline-block"></i> ${d.alasan || 'Ditolak'}</span>`;
+                } else {
+                    aksi = `<span class="text-gray-400 italic text-[10px] bg-gray-100 px-2 py-1 rounded border border-gray-200">${d.status}</span>`;
+                }
                 
                 let rowHtml = `<tr class="group hover:bg-gray-100">
                     <td class="p-2 border border-gray-300 whitespace-nowrap text-sm sticky left-0 z-20 bg-white group-hover:bg-gray-100 drop-shadow-[2px_0_5px_rgba(0,0,0,0.05)] font-bold text-gray-700">${d.nama}</td>
@@ -3199,7 +3209,6 @@
                     <td class="p-2 border border-gray-300 text-[11px] text-gray-600 text-center">${d.unit}</td>
                     <td class="p-2 border border-gray-300 font-bold ${sCol} text-center align-middle text-[11px] bg-gray-50">${d.status}</td>`;
                 
-                // Render Shift per tanggal 1 - 31
                 for(let i=1; i<=jHari; i++) {
                    let val = d.dates[i] || '-';
                    let valCol = val === '-' ? 'text-gray-300' : 'text-gray-800 bg-blue-50';
@@ -3210,14 +3219,23 @@
                 htmlContent += rowHtml;
             });
             tb.innerHTML = htmlContent;
+            lucide.createIcons();
         });
     }
 
     function prosesApprPerorangan(nip, bln, thn, actStr) {
-        if(!confirm(`Yakin ingin ${actStr.toLowerCase()} jadwal karyawan ini?`)) return;
+        let alasan = "";
+        if (actStr === 'Ditolak') {
+            alasan = prompt(`Masukkan ALASAN menolak jadwal karyawan ini:`);
+            if (alasan === null) return; // Dibatalkan oleh Admin
+            if (alasan.trim() === '') alasan = "Tidak ada keterangan";
+        } else {
+            if(!confirm(`Yakin ingin Menerima jadwal karyawan ini?`)) return;
+        }
+
         let tid = toastManager.show(`Memproses persetujuan...`);
-        // Parameter dikirim sebagai 'act'
-        gasApi('approveJadwalPeroranganAdmin', { nip: nip, bln: bln, thn: thn, act: actStr }).then(res => {
+        // Kirim act dan alasan ke API
+        gasApi('approveJadwalPeroranganAdmin', { nip: nip, bln: bln, thn: thn, act: actStr, alasan: alasan }).then(res => {
             toastManager.finish(tid, res.success, res.message);
             if(res.success) loadApprovalJadwalPerorangan(); 
         });
