@@ -114,7 +114,9 @@
       <p class="text-sm text-gray-600 mb-6">Apakah anda yakin konfirmasi pulang?</p>
       <div class="flex justify-center gap-3">
         <button onclick="closeConfirm()" class="px-6 py-2 bg-gray-200 text-gray-800 font-bold rounded-lg hover:bg-gray-300 transition">Tidak</button>
-        <button onclick="proceedKonfirmasiPulang()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition" id="btnProsesPulang">Ya</button>
+        <!-- Tombol 'Ya' akan menutup modal lalu membuka kamera -->
+        <button onclick="closeConfirm(); openLiveCamera('previewPulang', 'fotoBase64Pulang', 'pulang');" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition" id="btnProsesPulang">Ya</button>
+      </div>
       </div>
     </div>
   </div>
@@ -346,23 +348,21 @@
                 <input type="text" id="kfpKetLuar" class="w-full p-2 border rounded" placeholder="Misal: Posyandu Desa A">
               </div>
               
+              <!-- Tampilan Masuk -->
               <div class="mb-4">
-                  <label class="block text-sm font-medium mb-1">Foto Selfie Masuk <span class="text-red-500">*</span></label>
-                  <div class="bg-gray-100 p-2 rounded border border-gray-300 text-center">
-                      <!-- Input file bawaan kita sembunyikan untuk fallback (opsional) -->
-                      <input type="file" id="cameraInputMasuk" accept="image/*" class="hidden" onchange="handlePhotoCapture(this, 'previewMasuk', 'fotoBase64Masuk')">
-                      
-                      <img id="previewMasuk" class="w-full max-w-[150px] rounded mx-auto hidden mt-1 border border-gray-300" />
-                      <input type="hidden" id="fotoBase64Masuk">
-                      
-                      <!-- Panggil openLiveCamera() alih-alih .click() -->
-                      <button type="button" onclick="openLiveCamera('previewMasuk', 'fotoBase64Masuk')" class="bg-blue-100 text-blue-700 border border-blue-200 px-3 py-2 rounded font-bold text-xs w-full hover:bg-blue-200 mt-2 flex justify-center items-center gap-1 shadow-sm transition"><i data-lucide="camera" class="w-4 h-4"></i> Buka Kamera</button>
+                  <div class="bg-gray-100 p-2 rounded border border-gray-300 text-center hidden-view" id="wrapPreviewMasuk">
+                      <p class="text-xs text-gray-500 mb-2">Preview Foto Terakhir</p>
+                      <img id="previewMasuk" class="w-full max-w-[150px] rounded mx-auto border border-gray-300" />
+                      <button type="button" onclick="document.getElementById('cameraInputMasuk').click()" class="mt-2 text-[10px] text-blue-500 hover:underline">Atau Pilih dari Galeri</button>
                   </div>
+                  <input type="file" id="cameraInputMasuk" accept="image/*" class="hidden" onchange="handlePhotoCapture(this, 'previewMasuk', 'fotoBase64Masuk', 'masuk')">
+                  <input type="hidden" id="fotoBase64Masuk">
               </div>
 
-              <button id="btnKonfirmasiMasuk" onclick="submitKonfirmasiMasuk()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold w-full hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Konfirmasi Masuk</button>
-            </div>
-          </div>
+              <!-- Tombol Utama memanggil triggerKonfirmasiMasuk() -->
+              <button id="btnKonfirmasiMasuk" onclick="triggerKonfirmasiMasuk()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold w-full hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center gap-2">
+                 <i data-lucide="camera" class="w-5 h-5"></i> Konfirmasi Masuk
+              </button>
 
           <div id="panelPulang" class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hidden-view">
             <h3 class="font-bold text-lg mb-2 text-blue-600">Konfirmasi Pulang</h3>
@@ -372,20 +372,22 @@
             </div>
             <p class="text-sm text-gray-600 mb-4">Pastikan Anda masih dalam radius puskesmas jika shift di dalam gedung.</p>
 
+            <!-- Tampilan Pulang -->
             <div class="mb-4">
-                <label class="block text-sm font-medium mb-1">Foto Selfie Pulang <span class="text-red-500">*</span></label>
-                <div class="bg-gray-100 p-2 rounded border border-gray-300 text-center">
-                    <input type="file" id="cameraInputPulang" accept="image/*" class="hidden" onchange="handlePhotoCapture(this, 'previewPulang', 'fotoBase64Pulang')">
-                    
-                    <img id="previewPulang" class="w-full max-w-[150px] rounded mx-auto hidden mt-1 border border-gray-300" />
-                    <input type="hidden" id="fotoBase64Pulang">
-                    
-                    <button type="button" onclick="openLiveCamera('previewPulang', 'fotoBase64Pulang')" class="bg-blue-100 text-blue-700 border border-blue-200 px-3 py-2 rounded font-bold text-xs w-full hover:bg-blue-200 mt-2 flex justify-center items-center gap-1 shadow-sm transition"><i data-lucide="camera" class="w-4 h-4"></i> Buka Kamera</button>                    
+                <div class="bg-gray-100 p-2 rounded border border-gray-300 text-center hidden-view" id="wrapPreviewPulang">
+                    <p class="text-xs text-gray-500 mb-2">Preview Foto Terakhir</p>
+                    <img id="previewPulang" class="w-full max-w-[150px] rounded mx-auto border border-gray-300" />
+                    <button type="button" onclick="document.getElementById('cameraInputPulang').click()" class="mt-2 text-[10px] text-blue-500 hover:underline">Atau Pilih dari Galeri</button>
                 </div>
+                <input type="file" id="cameraInputPulang" accept="image/*" class="hidden" onchange="handlePhotoCapture(this, 'previewPulang', 'fotoBase64Pulang', 'pulang')">
+                <input type="hidden" id="fotoBase64Pulang">
             </div>
-
+            
             <div id="wrapTombolPulang" class="flex flex-col gap-3">
-              <button id="btnKonfirmasiPulang" onclick="submitKonfirmasiPulang()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold w-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Konfirmasi Pulang</button>
+              <!-- Tombol Utama memanggil popup confirm -->
+              <button id="btnKonfirmasiPulang" onclick="submitKonfirmasiPulang()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold w-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center gap-2">
+                 <i data-lucide="camera" class="w-5 h-5"></i> Konfirmasi Pulang
+              </button>
               <button onclick="goToPulangDinas()" class="bg-orange-50 text-orange-600 border border-orange-200 px-4 py-2 rounded-lg font-bold w-full hover:bg-orange-100 transition">Pulang Alasan Dinas</button>
             </div>
             
@@ -1928,10 +1930,25 @@
         alert("Browser tidak mendukung GPS.");
       }
     }
+// ==========================================
+    // MODULE: LOGIKA AUTO-SUBMIT KONFIRMASI
+    // ==========================================
+    function triggerKonfirmasiMasuk() {
+        const jenis = document.getElementById('kfpJenisLokasi').value;
+        const ket = document.getElementById('kfpKetLuar').value;
+        
+        // Validasi isian terlebih dahulu
+        if (jenis === 'Luar Gedung' && ket.trim() === '') {
+            return alert("Keterangan lokasi luar (posyandu, dll) wajib diisi!");
+        }
+        
+        // Buka kamera dan pasang flag "masuk" agar langsung disubmit otomatis
+        openLiveCamera('previewMasuk', 'fotoBase64Masuk', 'masuk');
+    }
 
     function submitKonfirmasiMasuk() {
       const fotoData = document.getElementById('fotoBase64Masuk').value;
-      if (!fotoData) return alert("Silahkan ambil foto selfie Masuk terlebih dahulu!"); 
+      if (!fotoData) return alert("Sistem mendeteksi foto kosong. Silahkan ulangi!"); 
 
       const btn = document.getElementById('btnKonfirmasiMasuk');
       btn.disabled = true; btn.innerHTML = "Memproses...";
@@ -1944,29 +1961,40 @@
         let tid = toastManager.show("Menyimpan konfirmasi & Foto...");
         gasApi('konfirmasiMasuk', { nip: currentUser.nip, userLat: lat, userLon: lon, jenisLokasi: jenis, ruangan: ruang, ketLuar: ket, fotoData }).then(res => {
           toastManager.finish(tid, res.success, res.message);
-          if(res.success) { loadStatusBeranda(); } 
-          else { btn.disabled = false; btn.innerHTML = "Konfirmasi Masuk"; }
+          if(res.success) { 
+              loadStatusBeranda(); 
+          } else { 
+              // Jika gagal (misal di luar radius), kembalikan tombol & munculkan preview foto
+              btn.disabled = false; 
+              btn.innerHTML = '<i data-lucide="camera" class="w-5 h-5"></i> Konfirmasi Masuk'; 
+              lucide.createIcons();
+              document.getElementById('wrapPreviewMasuk').classList.remove('hidden-view');
+          }
         });
       });
     }
 
-    function submitKonfirmasiPulang() { document.getElementById('confirmOverlay').classList.remove('hidden-view'); }
-    function closeConfirm() { document.getElementById('confirmOverlay').classList.add('hidden-view'); }
-
     function proceedKonfirmasiPulang() {
       const fotoData = document.getElementById('fotoBase64Pulang').value;
-      if (!fotoData) { closeConfirm(); return alert("Silahkan ambil foto selfie Pulang terlebih dahulu di form!"); }
+      if (!fotoData) return alert("Sistem mendeteksi foto kosong. Silahkan ulangi!"); 
 
-      const btn = document.getElementById('btnProsesPulang');
-      btn.disabled = true; btn.innerHTML = "Memproses...";
+      const mainBtn = document.getElementById('btnKonfirmasiPulang');
+      if (mainBtn) { mainBtn.disabled = true; mainBtn.innerHTML = "Memproses..."; }
       
       getGPS((lat, lon) => {
         let tid = toastManager.show("Memproses checkout & Foto...");
         gasApi('konfirmasiPulang', { nip: currentUser.nip, userLat: lat, userLon: lon, fotoData }).then(res => {
           toastManager.finish(tid, res.success, res.message);
-          btn.disabled = false; btn.innerHTML = "Ya";
-          closeConfirm();
-          if(res.success) loadStatusBeranda();
+          if(res.success) {
+              loadStatusBeranda();
+          } else {
+              if (mainBtn) { 
+                  mainBtn.disabled = false; 
+                  mainBtn.innerHTML = '<i data-lucide="camera" class="w-5 h-5"></i> Konfirmasi Pulang'; 
+                  lucide.createIcons(); 
+              }
+              document.getElementById('wrapPreviewPulang').classList.remove('hidden-view');
+          }
         });
       });
     }
@@ -3515,101 +3543,112 @@
     }
 
     // ==========================================
-    // MODULE: LIVE CAMERA API (PC & MOBILE)
+    // MODULE: LIVE CAMERA AUTO-SUBMIT API
     // ==========================================
     let liveStream = null;
-    let currentFacingMode = 'user'; // 'user' = kamera depan (selfie), 'environment' = kamera belakang
+    let currentFacingMode = 'user'; 
     let targetPreviewId = '';
     let targetBase64Id = '';
+    let currentAutoSubmitMode = ''; // Menyimpan tipe absen ('masuk' atau 'pulang')
 
-    function openLiveCamera(previewId, base64Id) {
+    function openLiveCamera(previewId, base64Id, autoSubmitMode = '') {
         targetPreviewId = previewId;
         targetBase64Id = base64Id;
+        currentAutoSubmitMode = autoSubmitMode;
         document.getElementById('cameraLiveOverlay').classList.remove('hidden-view');
-        startCameraStream();
-    }
-
-    function startCameraStream() {
-        // Hentikan stream yang sedang berjalan (jika ada) saat ganti kamera
-        if (liveStream) {
-            liveStream.getTracks().forEach(track => track.stop());
-        }
-        
-        // Meminta akses ke perangkat webcam/kamera
-        navigator.mediaDevices.getUserMedia({
-            video: { facingMode: currentFacingMode }
-        })
-        .then(stream => {
-            liveStream = stream;
-            const videoEl = document.getElementById('liveVideo');
-            videoEl.srcObject = stream;
-            
-            // Ubah efek cermin (mirror) hanya jika menggunakan kamera depan ('user')
-            if (currentFacingMode === 'user') {
-                videoEl.style.transform = "scaleX(-1)";
-            } else {
-                videoEl.style.transform = "none";
-            }
-        })
-        .catch(err => {
-            alert("Gagal mengakses kamera. Pastikan browser diizinkan mengakses kamera PC/HP Anda. \nError: " + err.message);
-            closeLiveCamera();
-        });
-    }
-
-    function closeLiveCamera() {
-        document.getElementById('cameraLiveOverlay').classList.add('hidden-view');
-        if (liveStream) {
-            liveStream.getTracks().forEach(track => track.stop());
-            liveStream = null;
-        }
-    }
-
-    function switchCamera() {
-        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
         startCameraStream();
     }
 
     function captureLivePhoto() {
         if (!liveStream) return;
         
-        let tid = toastManager.show("Memproses foto...");
+        let tid = toastManager.show("Mengompresi foto...");
         const video = document.getElementById('liveVideo');
         const canvas = document.getElementById('liveCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Batasi ukuran maksimal menjadi 600px untuk kompresi agar tidak berat saat disubmit
         const MAX_WIDTH = 600;
         let width = video.videoWidth;
         let height = video.videoHeight;
         
-        if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-        }
+        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
 
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Membalik (mirror) hasil jepretan jika pakai kamera depan agar teks/gambar tidak terbalik
+        canvas.width = width; canvas.height = height;
         if (currentFacingMode === 'user') {
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
+            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
         }
-        
-        // Gambar video frame ke dalam canvas
         ctx.drawImage(video, 0, 0, width, height);
-
-        // Ekstrak sebagai base64 (Format JPEG, Kualitas 70%)
-        const base64Str = canvas.toDataURL('image/jpeg', 0.7);
         
-        // Masukkan data ke UI preview form Absen
+        const base64Str = canvas.toDataURL('image/jpeg', 0.7);
         document.getElementById(targetPreviewId).src = base64Str;
-        document.getElementById(targetPreviewId).classList.remove('hidden');
-        document.getElementById(targetBase64Id).value = base64Str.split(',')[1]; // Buang URI Prefix
+        document.getElementById(targetBase64Id).value = base64Str.split(',')[1]; 
+        
+        // Tampilkan box preview
+        let wrapId = targetPreviewId.includes('Masuk') ? 'wrapPreviewMasuk' : 'wrapPreviewPulang';
+        document.getElementById(wrapId).classList.remove('hidden-view');
 
-        setTimeout(() => { toastManager.finish(tid, true, "Foto berhasil direkam!"); }, 500);
+        setTimeout(() => { toastManager.finish(tid, true, "Foto diambil!"); }, 500);
         closeLiveCamera();
+
+        // EKSEKUSI AUTO-SUBMIT
+        if (currentAutoSubmitMode === 'masuk') {
+            submitKonfirmasiMasuk();
+        } else if (currentAutoSubmitMode === 'pulang') {
+            proceedKonfirmasiPulang();
+        }
+    }
+
+    // Memperbarui input fallback (Upload manual) agar bisa auto-submit juga
+    function handlePhotoCapture(input, previewId, base64Id, autoSubmitMode = '') {
+      if (input.files && input.files[0]) {
+        let tid = toastManager.show("Mengompresi foto manual...");
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+             const canvasId = previewId === 'previewMasuk' ? 'canvasMasuk' : 'canvasPulang';
+             const canvas = document.getElementById(canvasId);
+             const ctx = canvas.getContext('2d');
+             
+             const MAX_WIDTH = 600;
+             let width = img.width; let height = img.height;
+             if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+             
+             canvas.width = width; canvas.height = height;
+             ctx.drawImage(img, 0, 0, width, height);
+             
+             const base64Str = canvas.toDataURL('image/jpeg', 0.7); 
+             document.getElementById(previewId).src = base64Str;
+             document.getElementById(base64Id).value = base64Str.split(',')[1];
+             
+             let wrapId = previewId.includes('Masuk') ? 'wrapPreviewMasuk' : 'wrapPreviewPulang';
+             document.getElementById(wrapId).classList.remove('hidden-view');
+             
+             toastManager.finish(tid, true, "Foto manual siap");
+
+             // EKSEKUSI AUTO-SUBMIT
+             if (autoSubmitMode === 'masuk') {
+                 submitKonfirmasiMasuk();
+             } else if (autoSubmitMode === 'pulang') {
+                 proceedKonfirmasiPulang();
+             }
+          }
+          img.src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // Perbarui fungsi resetFotoKamera
+    function resetFotoKamera() {
+       ['Masuk', 'Pulang'].forEach(tipe => {
+           const prev = document.getElementById('preview' + tipe);
+           const val = document.getElementById('fotoBase64' + tipe);
+           const wrap = document.getElementById('wrapPreview' + tipe);
+           if(prev) prev.src = '';
+           if(val) val.value = '';
+           if(wrap) wrap.classList.add('hidden-view');
+       });
     }
 </script>
 </body>
