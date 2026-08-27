@@ -613,16 +613,19 @@
                 <label class="block text-sm font-bold mb-1">Tahun</label>
                 <input type="number" id="koorJadTahun" class="p-2 border rounded w-24">
               </div>
-              <button onclick="loadKoorJadwal()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">Tampilkan Jadwal Unit</button>
-              <button onclick="simpanKoorJadwal()" class="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700 hidden-view" id="btnSimpanKoorJadwal">Simpan & Ajukan ke Admin</button>
+              <button onclick="loadKoorJadwal()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 shadow-sm transition">Tampilkan Jadwal Unit</button>
+              
+              <!-- TOMBOL SIMPAN SAJA (TANPA PENGAJUAN) -->
+              <button onclick="simpanKoorJadwal()" class="bg-indigo-600 text-white px-4 py-2 rounded font-bold hover:bg-indigo-700 hidden-view shadow-sm transition flex items-center gap-2" id="btnSimpanKoorJadwal">
+                 <i data-lucide="save" class="w-4 h-4"></i> Simpan Data (Draft)
+              </button>
             </div>
             
-            <div class="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+            <div class="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200 flex flex-col md:flex-row items-start justify-between gap-2">
                 <div>
-                   <span class="text-sm font-bold text-gray-700">Status Pengajuan:</span>
-                   <span id="koorJadStatusBadge" class="ml-2 px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-bold border">Belum Ada</span>
+                   <span class="text-sm font-bold text-gray-700 flex items-center gap-1"><i data-lucide="info" class="w-4 h-4"></i> Petunjuk:</span>
+                   <p class="ml-5 text-xs text-gray-600 mt-1">Klik <b>Simpan Data</b> untuk menyimpan tanpa mengirimkan ke Admin. <br>Klik tombol <b>Ajukan</b> pada baris karyawan untuk menyerahkan jadwal tersebut agar disetujui Admin.</p>
                 </div>
-                <p class="text-[10px] text-gray-500 italic">* Jika status Diterima, jadwal akan terkunci dan hanya Admin yang bisa mengubah.</p>
             </div>
 
             <div class="max-h-[65vh] overflow-auto relative border border-gray-300 rounded-lg shadow-inner bg-white">
@@ -632,7 +635,6 @@
               </table>
             </div>
 
-            <!-- Keterangan Shift Koor -->
             <div class="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
                <h3 class="font-bold text-sm text-blue-800 mb-2">Keterangan Kode Shift:</h3>
                <div id="ketShiftKoor" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 text-xs text-gray-700"></div>
@@ -1205,7 +1207,7 @@
     // ==========================================
     // 1. KONFIGURASI API & FETCH WRAPPER (ANTI HANG)
     // ==========================================
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWSylqP-iWmBqK4cBLQzQx19aiEKH2eZIQq4-G_Of_EcBfEOiE3Xtmb9NBaqT3JdazuA/exec'; // Pastikan URL Anda benar
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyo-k9EhfEs0Gktvn1fptmr-_xdGkBmmasF0FRC7UYe8HUjghXS6VfcZt3BVzuSgOLK_w/exec'; // Pastikan URL Anda benar
 
     async function gasApi(action, params = {}) {
       // Buat controller untuk membatasi waktu loading (Timeout 15 detik)
@@ -2346,12 +2348,11 @@
 
     let listKoorKaryawanGlobal = [];
     let globalKoorJadwalBulanData = [];
-    let currentKoorJadwalStatus = '';
     
     function loadKoorJadwal() {
        if(!currentUser || currentUser.role !== 'Koordinator') return;
        document.getElementById('koorUnitTxt').innerText = currentUser.unit || 'Unit Belum Diset';
-       if(!currentUser.unit) { document.getElementById('tbKoorJadwal').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Anda belum diset ke dalam Unit manapun. Silahkan lapor ke Admin.</td></tr>'; return; }
+       if(!currentUser.unit) { document.getElementById('tbKoorJadwal').innerHTML = '<tr><td colspan="35" class="p-4 text-center text-red-500">Anda belum diset ke dalam Unit manapun. Silahkan lapor ke Admin.</td></tr>'; return; }
 
        const bln = parseInt(document.getElementById('koorJadBulan').value);
        const thn = parseInt(document.getElementById('koorJadTahun').value);
@@ -2360,15 +2361,16 @@
        gasApi('getJadwalUnitKoor', { bln, thn, unit: currentUser.unit }).then(res => {
           listKoorKaryawanGlobal = res.users || []; 
           globalKoorJadwalBulanData = res.jadwal || [];
-          currentKoorJadwalStatus = res.statusApproval || 'Belum Ada';
           
-          let b = document.getElementById('koorJadStatusBadge');
-          b.innerText = currentKoorJadwalStatus;
-          if(currentKoorJadwalStatus === 'Diterima') b.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold border border-green-300';
-          else if(currentKoorJadwalStatus === 'Menunggu') b.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold border border-yellow-300';
-          else b.className = 'ml-2 px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-bold border border-gray-300';
+          document.getElementById('btnSimpanKoorJadwal').classList.remove('hidden-view');
           
           renderKoorJadwalTable();
+          
+          const ketContainer = document.getElementById('ketShiftKoor');
+          if(ketContainer && res.shifts) {
+             if(res.shifts.length === 0) ketContainer.innerHTML = '<span class="text-gray-500 col-span-full">Belum ada data shift yang diatur.</span>';
+             else ketContainer.innerHTML = res.shifts.map(s => `<div class="bg-white p-2 rounded border border-blue-200 shadow-sm"><span class="font-bold text-blue-600">${s.kode}</span><br> <span class="text-gray-600">${s.jm} - ${s.jp}</span> ${s.lintas === 'Ya' ? '<span class="text-red-500 font-bold ml-1" title="Lintas Hari">(+1 Hari)</span>' : ''}</div>`).join('');
+          }
           toastManager.finish(tid, true, "Selesai dimuat");
        });
     }
@@ -2377,14 +2379,12 @@
       const bln = parseInt(document.getElementById('koorJadBulan').value);
       const thn = parseInt(document.getElementById('koorJadTahun').value);
       const jHari = new Date(thn, bln, 0).getDate();
-      let isLocked = currentKoorJadwalStatus === 'Diterima';
-      if(isLocked) document.getElementById('btnSimpanKoorJadwal').classList.add('hidden-view');
-      else document.getElementById('btnSimpanKoorJadwal').classList.remove('hidden-view');
 
-      let headHTML = `<tr><th class="p-2 border border-gray-300 text-left whitespace-nowrap sticky left-0 z-40 bg-gray-200 shadow-sm" rowspan="2">Nama Karyawan</th><th class="p-2 border border-gray-300 text-left min-w-[100px] bg-gray-200" rowspan="2">NIP</th>`;
+      let headHTML = `<tr>
+        <th class="p-2 border border-gray-300 text-left whitespace-nowrap sticky left-0 z-40 bg-gray-200 shadow-sm" rowspan="2">Nama Karyawan</th>
+        <th class="p-2 border border-gray-300 text-center min-w-[80px] bg-gray-200" rowspan="2">Status</th>`;
       for(let i=1; i<=jHari; i++) headHTML += `<th class="p-1 border border-gray-300 min-w-[35px] text-center bg-gray-200">${i}</th>`;
-      if(!isLocked) headHTML += `<th class="p-2 border border-gray-300 text-center min-w-[100px] bg-gray-200" rowspan="2">Aksi</th>`;
-      headHTML += `</tr><tr>`;
+      headHTML += `<th class="p-2 border border-gray-300 text-center min-w-[130px] bg-gray-200" rowspan="2">Aksi</th></tr><tr>`;
       for(let i=1; i<=jHari; i++) {
         const hari = getNamaHari(i, bln, thn);
         const color = hari === 'Min' ? 'text-red-500' : 'text-gray-600';
@@ -2394,20 +2394,41 @@
       document.getElementById('thKoorJadwal').innerHTML = headHTML;
 
        const bHtml = listKoorKaryawanGlobal.map(u => {
-          let jRow = globalKoorJadwalBulanData.find(x => x.nip === u.nip) || { dates: {} };
-          let r = `<tr class="group hover:bg-gray-100"><td class="p-2 border border-gray-300 whitespace-nowrap text-sm sticky left-0 z-20 bg-white">${u.nama}</td><td class="p-2 border border-gray-300 text-sm">${u.nip}</td>`;
+          let jRow = globalKoorJadwalBulanData.find(x => x.nip === u.nip) || { dates: {}, statusDraft: 'Belum Ada' };
+          let uStatus = jRow.statusDraft || 'Belum Ada';
+          let isLocked = uStatus === 'Diterima' || uStatus === 'Menunggu';
+          
+          let sCol = uStatus === 'Diterima' ? 'text-green-600' : (uStatus === 'Menunggu' ? 'text-yellow-600' : (uStatus === 'Ditolak' ? 'text-red-600' : 'text-gray-500'));
+
+          let r = `<tr class="group hover:bg-gray-100">
+             <td class="p-2 border border-gray-300 whitespace-nowrap text-sm sticky left-0 z-20 bg-white">${u.nama}<br><span class="text-[10px] text-gray-500">${u.nip}</span></td>
+             <td class="p-2 border border-gray-300 text-[10px] font-bold text-center ${sCol} bg-gray-50">${uStatus}</td>`;
+          
           for(let i=1; i<=jHari; i++) {
             let val = jRow.dates[i] || '';
             let readonlyAttr = isLocked ? 'readonly' : '';
-            let bgClass = isLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-transparent focus:bg-blue-100';
+            let bgClass = isLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none' : 'bg-transparent text-gray-700 focus:bg-blue-100 focus:ring-1 focus:ring-blue-500';
             r += `<td class="p-0 border border-gray-300 text-center relative"><input type="text" ${readonlyAttr} class="w-full h-full min-h-[32px] text-center ${bgClass} border-none outline-none uppercase text-xs font-bold" id="jk_${u.nip}_${i}" value="${val}"></td>`;
           }
-          if(!isLocked) r += `<td class="p-1 border border-gray-300 text-center whitespace-nowrap"><button onclick="copyKoorJadwal('${u.nip}', ${jHari})" class="bg-gray-200 px-2 py-1 rounded text-xs mr-1">Copy</button><button onclick="pasteKoorJadwal('${u.nip}', ${jHari})" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Paste</button></td>`;
-          return r + '</tr>';
+
+          let aksiHTML = '';
+          if (isLocked) {
+              aksiHTML = `<span class="text-gray-400 italic text-[10px]"><i data-lucide="lock" class="w-3 h-3 inline-block"></i> Terkunci</span>`;
+          } else {
+              aksiHTML = `
+                 <button onclick="copyKoorJadwal('${u.nip}', ${jHari})" class="bg-gray-200 text-gray-800 font-bold px-2 py-1 rounded text-[10px] hover:bg-gray-300 mr-0.5" title="Copy">C</button>
+                 <button onclick="pasteKoorJadwal('${u.nip}', ${jHari})" class="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded text-[10px] hover:bg-blue-200 mr-1" title="Paste">P</button>
+                 <button onclick="ajukanKoorPerorangan('${u.nip}', ${jHari})" class="bg-green-600 text-white font-bold px-2 py-1 rounded text-[10px] hover:bg-green-700 shadow-sm" title="Kirim ke Admin">Ajukan</button>
+              `;
+          }
+
+          r += `<td class="p-1 border border-gray-300 text-center whitespace-nowrap bg-gray-50">${aksiHTML}</td></tr>`;
+          return r;
        }).join('');
        
-       if(listKoorKaryawanGlobal.length === 0) document.getElementById('tbKoorJadwal').innerHTML = `<tr><td colspan="${isLocked ? jHari+2 : jHari+3}" class="p-4 text-center text-gray-500">Tidak ada karyawan di unit Anda.</td></tr>`;
+       if(listKoorKaryawanGlobal.length === 0) document.getElementById('tbKoorJadwal').innerHTML = `<tr><td colspan="${jHari+3}" class="p-4 text-center text-gray-500">Tidak ada karyawan di unit Anda.</td></tr>`;
        else document.getElementById('tbKoorJadwal').innerHTML = bHtml;
+       lucide.createIcons();
     }
 
     let copiedKoorJadwalData = null;
@@ -2430,24 +2451,55 @@
     }
 
     function simpanKoorJadwal() {
-       if(!confirm("Anda yakin ingin menyimpan dan mengajukan jadwal ini ke Admin?")) return;
        const bln = document.getElementById('koorJadBulan').value;
        const thn = document.getElementById('koorJadTahun').value;
        const jHari = new Date(thn, bln, 0).getDate();
        let payload = [];
+       
        listKoorKaryawanGlobal.forEach(u => {
-          let row = { nip: u.nip, dates: {} };
-          for(let i=1; i<=jHari; i++) {
-             let inputEl = document.getElementById(`jk_${u.nip}_${i}`);
-             if(inputEl) row.dates[i] = inputEl.value.trim();
+          let jRow = globalKoorJadwalBulanData.find(x => x.nip === u.nip) || {};
+          let uStatus = jRow.statusDraft || 'Belum Ada';
+          
+          // Hanya simpan yang belum dikunci
+          if (uStatus !== 'Diterima' && uStatus !== 'Menunggu') {
+             let rowDates = {};
+             for(let i=1; i<=jHari; i++) {
+                let inputEl = document.getElementById(`jk_${u.nip}_${i}`);
+                if(inputEl) rowDates[i] = inputEl.value.trim();
+             }
+             // Tanpa flag status = Backend akan menjadikannya Draft atau status asli
+             payload.push({ nip: u.nip, dates: rowDates });
           }
-          payload.push(row);
        });
        
-       let tid = toastManager.show("Mengajukan Jadwal Unit...");
+       if(payload.length === 0) return alert("Tidak ada data yang bisa disimpan. Semua data sudah terkunci / diajukan.");
+
+       let tid = toastManager.show("Menyimpan ke Draft...");
        gasApi('saveJadwalUnitKoor', { bln, thn, unit: currentUser.unit, payload }).then(res => { 
-          toastManager.finish(tid, res.success, res.message);
+          toastManager.finish(tid, res.success, "Jadwal disimpan di Draft");
           loadKoorJadwal();
+       });
+    }
+
+    function ajukanKoorPerorangan(nip, jHari) {
+       if(!confirm("Kirim usulan jadwal karyawan ini ke Admin?\n\nSetelah diajukan, jadwal tidak bisa diubah kecuali ditolak.")) return;
+       
+       const bln = document.getElementById('koorJadBulan').value;
+       const thn = document.getElementById('koorJadTahun').value;
+       
+       let rowDates = {};
+       for(let i=1; i<=jHari; i++) {
+           let inputEl = document.getElementById(`jk_${nip}_${i}`);
+           if(inputEl) rowDates[i] = inputEl.value.trim();
+       }
+       
+       // Tambahkan flag 'status: Menunggu'
+       let payload = [{ nip: nip, dates: rowDates, status: 'Menunggu' }];
+       
+       let tid = toastManager.show("Mengirim ke Admin...");
+       gasApi('saveJadwalUnitKoor', { bln, thn, unit: currentUser.unit, payload }).then(res => { 
+          toastManager.finish(tid, res.success, "Berhasil Diajukan");
+          if(res.success) loadKoorJadwal();
        });
     }
 
