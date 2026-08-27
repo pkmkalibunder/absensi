@@ -944,8 +944,10 @@
           <div class="bg-white p-6 rounded-xl shadow-sm">
             <div class="flex border-b mb-4 flex-wrap" id="tabsAdminJadwal">
                <button onclick="switchAdminJadwalTab('Seting')" class="px-4 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600" id="tabAdminJadwal_Seting">Seting Jadwal</button>
-               <button onclick="switchAdminJadwalTab('Tukar')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600" id="tabAdminJadwal_Tukar">Daftar Tukar/Ganti Shift</button>
-               <button onclick="switchAdminJadwalTab('ApprovalUnit')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600" id="tabAdminJadwal_ApprovalUnit">Approval Jadwal Unit</button>
+               <button onclick="switchAdminJadwalTab('Tukar')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600" id="tabAdminJadwal_Tukar">Daftar Tukar/Ganti</button>
+               <button onclick="switchAdminJadwalTab('ApprovalUnit')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600" id="tabAdminJadwal_ApprovalUnit">Approval Unit (Grup)</button>
+               <!-- TAB BARU -->
+               <button onclick="switchAdminJadwalTab('ApprPerorangan')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600" id="tabAdminJadwal_ApprPerorangan">Approval Perorangan</button>
             </div>
 
             <!-- Tab 1: Seting Jadwal Admin -->
@@ -1037,6 +1039,30 @@
                        </tr>
                     </thead>
                     <tbody id="tbAdminApprJadwal" class="divide-y divide-gray-100">
+                       <tr><td colspan="4" class="p-4 text-center text-gray-500">Silahkan pilih bulan dan klik tampilkan.</td></tr>
+                    </tbody>
+                  </table>
+               </div>
+            </div>
+
+            <!-- Tab 4: Approval Jadwal Perorangan -->
+            <div id="contentAdminJadwal_ApprPerorangan" class="hidden-view">
+               <div class="flex flex-wrap items-center mb-4 gap-2">
+                  <select id="apprPerBulan" class="p-2 text-sm border rounded w-32"></select>
+                  <input type="number" id="apprPerTahun" class="p-2 text-sm border rounded w-24">
+                  <button onclick="loadApprovalJadwalPerorangan()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold">Tampilkan Pengajuan</button>
+               </div>
+               <div class="table-container">
+                  <table class="w-full text-left text-sm border-collapse">
+                    <thead class="bg-gray-100">
+                       <tr>
+                         <th class="p-2 border border-gray-200">Unit / Bagian</th>
+                         <th class="p-2 border border-gray-200">Nama Karyawan</th>
+                         <th class="p-2 border border-gray-200 text-center">Status</th>
+                         <th class="p-2 border border-gray-200 text-center">Aksi Approval</th>
+                       </tr>
+                    </thead>
+                    <tbody id="tbAdminApprPerorangan" class="divide-y divide-gray-100">
                        <tr><td colspan="4" class="p-4 text-center text-gray-500">Silahkan pilih bulan dan klik tampilkan.</td></tr>
                     </tbody>
                   </table>
@@ -1180,7 +1206,7 @@
     // ==========================================
     // 1. KONFIGURASI API & FETCH WRAPPER (ANTI HANG)
     // ==========================================
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxkvtm3tvJKvS56RPaIWdH-ydMywrXZj9kvLLo0s7hx3FV55J_rWB9ou7vxAs-u6TBVDw/exec'; // Pastikan URL Anda benar
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyM66Z9mfH0ciK3ufN9rykQzR2Rud8sucOn53us69PkCtm3pRquvkIosliaPAfo31B6/exec'; // Pastikan URL Anda benar
 
     async function gasApi(action, params = {}) {
       // Buat controller untuk membatasi waktu loading (Timeout 15 detik)
@@ -1325,6 +1351,7 @@
       document.getElementById('jadSayaBulan').innerHTML = blnOptions;
       document.getElementById('koorJadBulan').innerHTML = blnOptions;
       document.getElementById('apprJadBulan').innerHTML = blnOptions;
+      if(document.getElementById('apprPerBulan')) document.getElementById('apprPerBulan').innerHTML = blnOptions;
       if(document.getElementById('filterAdminTukarBulan')) document.getElementById('filterAdminTukarBulan').innerHTML = blnOptions;
       
       if(document.getElementById('lapPengajuanBulan')) document.getElementById('lapPengajuanBulan').innerHTML = blnOptions; // TAMBAHAN BARU
@@ -1342,6 +1369,8 @@
       document.getElementById('apprJadTahun').value = now.getFullYear();
       if(document.getElementById('lapPengajuanBulan')) document.getElementById('lapPengajuanBulan').value = now.getMonth() + 1;
       if(document.getElementById('lapPengajuanTahun')) document.getElementById('lapPengajuanTahun').value = now.getFullYear();
+      if(document.getElementById('apprPerBulan')) document.getElementById('apprPerBulan').value = now.getMonth() + 1; // BARU
+      if(document.getElementById('apprPerTahun')) document.getElementById('apprPerTahun').value = now.getFullYear(); // BARU
 
       if(document.getElementById('filterAdminTukarBulan')) document.getElementById('filterAdminTukarBulan').value = now.getMonth() + 1;
       if(document.getElementById('filterAdminTukarTahun')) document.getElementById('filterAdminTukarTahun').value = now.getFullYear();
@@ -2947,9 +2976,12 @@
        document.getElementById('contentAdminJadwal_Seting').classList.add('hidden-view');
        document.getElementById('contentAdminJadwal_Tukar').classList.add('hidden-view');
        document.getElementById('contentAdminJadwal_ApprovalUnit').classList.add('hidden-view');
+       document.getElementById('contentAdminJadwal_ApprPerorangan').classList.add('hidden-view');
+
        document.getElementById('tabAdminJadwal_Seting').className = "px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600";
        document.getElementById('tabAdminJadwal_Tukar').className = "px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600";
        document.getElementById('tabAdminJadwal_ApprovalUnit').className = "px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600";
+       document.getElementById('tabAdminJadwal_ApprPerorangan').className = "px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600";
 
        if (tab === 'Seting') {
           document.getElementById('contentAdminJadwal_Seting').classList.remove('hidden-view');
@@ -2962,6 +2994,10 @@
           document.getElementById('contentAdminJadwal_ApprovalUnit').classList.remove('hidden-view');
           document.getElementById('tabAdminJadwal_ApprovalUnit').className = "px-4 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600";
           loadApprovalJadwalUnit();
+       } else if (tab === 'ApprPerorangan') {
+          document.getElementById('contentAdminJadwal_ApprPerorangan').classList.remove('hidden-view');
+          document.getElementById('tabAdminJadwal_ApprPerorangan').className = "px-4 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600";
+          loadApprovalJadwalPerorangan();
        }
     }
 
@@ -3046,6 +3082,47 @@
         gasApi('approveJadwalUnitAdmin', { bln, thn, unit }).then(res => {
             toastManager.finish(tid, res.success, res.message);
             if(res.success) loadApprovalJadwalUnit();
+        });
+    }
+
+    function loadApprovalJadwalPerorangan() {
+        const bln = parseInt(document.getElementById('apprPerBulan').value);
+        const thn = parseInt(document.getElementById('apprPerTahun').value);
+        let tid = toastManager.show("Memuat Pengajuan Perorangan...");
+        
+        gasApi('getDraftJadwalPerorangan', { bln, thn }).then(data => {
+            toastManager.finish(tid, true, "Selesai");
+            const tb = document.getElementById('tbAdminApprPerorangan');
+            if(!data || data.length === 0) {
+                tb.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Tidak ada pengajuan jadwal bulan ini.</td></tr>';
+                return;
+            }
+            let htmlContent = '';
+            data.forEach(d => {
+                let sCol = d.status === 'Diterima' ? 'text-green-600' : (d.status === 'Ditolak' ? 'text-red-600' : 'text-yellow-600');
+                
+                let aksi = d.status === 'Menunggu' ? 
+                    `<button onclick="prosesApprPerorangan('${d.nip}', ${bln}, ${thn}, 'Diterima')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-green-600 mr-1 shadow-sm">Terima</button>
+                     <button onclick="prosesApprPerorangan('${d.nip}', ${bln}, ${thn}, 'Ditolak')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-red-600 shadow-sm">Tolak</button>` 
+                    : `<span class="text-gray-400 italic text-xs">${d.status}</span>`;
+                
+                htmlContent += `<tr class="hover:bg-gray-50">
+                    <td class="p-2 border font-bold text-gray-700">${d.unit}</td>
+                    <td class="p-2 border">${d.nama} <br><span class="text-[10px] text-gray-500">NIP: ${d.nip}</span></td>
+                    <td class="p-2 border font-bold ${sCol} text-center align-middle">${d.status}</td>
+                    <td class="p-2 border text-center align-middle">${aksi}</td>
+                </tr>`;
+            });
+            tb.innerHTML = htmlContent;
+        });
+    }
+
+    function prosesApprPerorangan(nip, bln, thn, action) {
+        if(!confirm(`Yakin ingin ${action.toLowerCase()} jadwal karyawan ini?`)) return;
+        let tid = toastManager.show(`Memproses persetujuan...`);
+        gasApi('approveJadwalPeroranganAdmin', { nip, bln, thn, action }).then(res => {
+            toastManager.finish(tid, res.success, res.message);
+            if(res.success) loadApprovalJadwalPerorangan(); // Reload tabel jika sukses
         });
     }
 
