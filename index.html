@@ -61,6 +61,22 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toastContainer" class="fixed bottom-4 right-4 z-[60] flex flex-col gap-3 pointer-events-none"></div>
 
+  <!-- OVERLAY KATA SAPAAN POPUP (PASTIKAN ADA DI SINI) -->
+  <div id="greetingOverlay" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex flex-col items-center justify-center hidden-view backdrop-blur-sm transition-all duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden transform transition-all scale-95 opacity-0 duration-500" id="greetingBox">
+      <div class="h-48 w-full bg-gray-200 relative">
+        <img id="greetImage" src="" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+        <h2 id="greetTitle" class="absolute bottom-4 left-6 right-6 text-2xl font-bold text-white tracking-wide"></h2>
+      </div>
+      <div class="p-6 text-center">
+        <i data-lucide="quote" class="w-8 h-8 text-blue-200 mx-auto mb-3"></i>
+        <p id="greetMessage" class="text-gray-600 text-sm italic font-medium leading-relaxed mb-6"></p>
+        <button onclick="closeGreeting()" class="bg-blue-600 text-white px-8 py-2.5 rounded-full font-bold shadow-md hover:bg-blue-700 transition">Lanjut</button>
+      </div>
+    </div>
+  </div>
+
   <!-- OVERLAY LIVE CAMERA (UNTUK PC & HP) -->
     <div id="cameraLiveOverlay" class="fixed inset-0 bg-black z-[80] flex flex-col hidden-view">
       <div class="p-4 flex justify-between items-center bg-gray-900 text-white shadow-md">
@@ -487,112 +503,122 @@
 
             <!-- BLOK GANTI / TUKAR SHIFT -->
             <div class="mt-8 border-t pt-6">
-              <h2 class="text-lg font-bold mb-4">Usulan Tukar / Ganti Shift</h2>
+              <h2 class="text-lg font-bold mb-4 text-gray-800"><i data-lucide="repeat" class="w-5 h-5 inline-block mr-1 text-blue-600"></i> Usulan Tukar / Ganti Shift</h2>
               
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <!-- FORM PENGAJUAN -->
-                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <h3 class="font-bold text-sm text-gray-700 mb-3 border-b pb-2">Buat Usulan Baru</h3>
+              <div class="flex flex-col gap-6">
+                 
+                 <!-- FORM PENGAJUAN (FULL WIDTH) -->
+                 <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm w-full">
+                    <h3 class="font-bold text-sm text-gray-700 mb-2 border-b pb-2"><i data-lucide="edit-3" class="w-4 h-4 inline-block mr-1"></i> Buat Usulan Baru</h3>
                     <p class="text-xs text-gray-500 mb-4">Hanya berlaku untuk jadwal shift mulai hari esok ke depan.</p>
                     
-                    <div class="space-y-3">
-                       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="space-y-4">
+                       <!-- Baris 1: Pilihan Tanggal -->
+                       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                           <div>
-                             <label class="block text-xs font-bold mb-1">Tgl Shift Anda</label>
-                             <input type="date" id="tgMyTgl" class="w-full p-2 text-sm border rounded" onchange="syncTglTarget()">
+                             <label class="block text-xs font-bold mb-1 text-gray-600">Tgl Shift Anda</label>
+                             <input type="date" id="tgMyTgl" class="w-full p-2.5 text-sm border rounded bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" onchange="syncTglTarget()">
                           </div>
                           <div>
-                             <label class="block text-xs font-bold mb-1">Jenis Usulan</label>
-                             <select id="tgJenis" class="w-full p-2 text-sm border rounded" onchange="handleJenisUsulanChange()">
-                               <option value="Tukar">Tukar Shift</option>
-                               <option value="Ganti">Ganti Shift</option>
+                             <label class="block text-xs font-bold mb-1 text-gray-600">Jenis Usulan</label>
+                             <select id="tgJenis" class="w-full p-2.5 text-sm border rounded bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" onchange="handleJenisUsulanChange()">
+                               <option value="Tukar">Tukar Shift (Saling Tukar Hari)</option>
+                               <option value="Ganti">Ganti Shift (Memberikan Shift ke Teman)</option>
                              </select>
                           </div>
-                       </div>
-                       
-                       <div>
-                          <label class="block text-xs font-bold mb-1">Tgl Shift Teman (Target)</label>
-                          <div class="flex gap-2">
-                             <input type="date" id="tgTargetTgl" class="flex-1 p-2 text-sm border rounded">
-                             <button onclick="cekTukarGantiShift()" class="bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 shadow-sm">Cari Karyawan</button>
+                          <div>
+                             <label class="block text-xs font-bold mb-1 text-gray-600">Tgl Shift Teman (Target)</label>
+                             <div class="flex gap-2">
+                                <input type="date" id="tgTargetTgl" class="flex-1 p-2.5 text-sm border rounded bg-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+                                <button onclick="cekTukarGantiShift()" class="bg-gray-700 text-white px-4 py-2.5 rounded text-sm hover:bg-gray-800 shadow-md font-bold transition flex items-center gap-1"><i data-lucide="search" class="w-4 h-4"></i> Cari</button>
+                             </div>
                           </div>
                        </div>
                        
-                       <!-- Tampil setelah cari ditekan -->
-                       <div id="wrapOpsiTukar" class="hidden-view space-y-3 border-t pt-3 border-gray-300">
+                       <!-- Baris 2: Hasil Pencarian (Muncul setelah klik Cari) -->
+                       <div id="wrapOpsiTukar" class="hidden-view mt-2 border-t border-gray-300 pt-4">
                           <input type="hidden" id="tgMyShift">
-                          <div>
-                             <label class="block text-xs font-bold mb-1">Filter Unit</label>
-                             <select id="tgFilterUnit" class="w-full p-2 text-sm border rounded" onchange="renderDropdownPenerimaTukar()">
-                               <option value="">Semua Unit</option>
-                             </select>
+                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                             <div>
+                                <label class="block text-xs font-bold mb-1 text-gray-600">Filter Unit</label>
+                                <select id="tgFilterUnit" class="w-full p-2 text-sm border rounded bg-white" onchange="renderDropdownPenerimaTukar()">
+                                  <option value="">Semua Unit</option>
+                                </select>
+                             </div>
+                             <div class="md:col-span-2">
+                                <label class="block text-xs font-bold mb-1 text-gray-600">Pilih Karyawan Penerima / Target</label>
+                                <select id="tgPenerima" class="w-full p-2 text-sm border rounded bg-white focus:ring-2 focus:ring-blue-500 outline-none"></select>
+                             </div>
                           </div>
-                          <div>
-                             <label class="block text-xs font-bold mb-1">Pilih Karyawan Target</label>
-                             <select id="tgPenerima" class="w-full p-2 text-sm border rounded"></select>
+                          <div class="mt-4 flex justify-end">
+                             <button onclick="submitTukarGantiShift()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-blue-700 shadow-md transition flex items-center gap-2"><i data-lucide="send" class="w-4 h-4"></i> Kirim Usulan Shift</button>
                           </div>
-                          <button onclick="submitTukarGantiShift()" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold text-sm hover:bg-blue-700 shadow-sm">Kirim Usulan</button>
                        </div>
                     </div>
                  </div>
 
-                 <!-- TABEL USULAN (MASUK & KELUAR) -->
-                 <div class="space-y-4">
-                    <!-- Usulan Masuk -->
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                       <div class="flex justify-between items-center mb-2 border-b pb-1">
-                          <h3 class="font-bold text-sm text-orange-600">Usulan Masuk (Persetujuan Anda)</h3>
-                          <button onclick="loadRiwayatTukarShift()" class="text-gray-400 hover:text-blue-500"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                 <!-- TABEL USULAN (MASUK & KELUAR) DI BAWAH FORMULIR -->
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    
+                    <!-- KOTAK KIRI: Usulan Masuk -->
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+                       <div class="flex justify-between items-center mb-3 border-b pb-2">
+                          <h3 class="font-bold text-sm text-orange-600 flex items-center gap-1"><i data-lucide="inbox" class="w-4 h-4"></i> Usulan Masuk (Minta Persetujuan)</h3>
+                          <button onclick="loadRiwayatTukarShift()" class="text-gray-400 hover:text-blue-500 transition"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                        </div>
                        
-                       <!-- Tabs & PerPage -->
                        <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
-                          <div class="flex gap-2" id="tabsTukarMasuk">
-                             <button onclick="setTukarMasukFilter('Menunggu')" class="px-2 py-1 text-xs font-bold text-blue-600 border-b-2 border-blue-600" id="tabTM_Menunggu">Menunggu <span class="bg-yellow-100 text-yellow-800 ml-1 px-1 rounded-full" id="bdgTM_Menunggu">0</span></button>
-                             <button onclick="setTukarMasukFilter('Disetujui')" class="px-2 py-1 text-xs font-bold text-gray-500 hover:text-blue-600" id="tabTM_Disetujui">Disetujui <span class="bg-green-100 text-green-800 ml-1 px-1 rounded-full" id="bdgTM_Disetujui">0</span></button>
-                             <button onclick="setTukarMasukFilter('Ditolak')" class="px-2 py-1 text-xs font-bold text-gray-500 hover:text-blue-600" id="tabTM_Ditolak">Ditolak <span class="bg-red-100 text-red-800 ml-1 px-1 rounded-full" id="bdgTM_Ditolak">0</span></button>
+                          <div class="flex gap-1 border-b" id="tabsTukarMasuk">
+                             <button onclick="setTukarMasukFilter('Menunggu')" class="px-3 py-1.5 text-xs font-bold text-blue-600 border-b-2 border-blue-600 transition" id="tabTM_Menunggu">Menunggu <span class="bg-yellow-100 text-yellow-800 ml-1 px-1.5 py-0.5 rounded-full" id="bdgTM_Menunggu">0</span></button>
+                             <button onclick="setTukarMasukFilter('Disetujui')" class="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-blue-600 transition" id="tabTM_Disetujui">Disetujui <span class="bg-green-100 text-green-800 ml-1 px-1.5 py-0.5 rounded-full" id="bdgTM_Disetujui">0</span></button>
+                             <button onclick="setTukarMasukFilter('Ditolak')" class="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-blue-600 transition" id="tabTM_Ditolak">Ditolak <span class="bg-red-100 text-red-800 ml-1 px-1.5 py-0.5 rounded-full" id="bdgTM_Ditolak">0</span></button>
                           </div>
                           <div>
-                             <select id="selTukarMasukPerPage" onchange="setTukarMasukPerPage(this.value)" class="text-xs border rounded p-1 outline-none">
-                                <option value="5">5</option>
-                                <option value="10">10</option>
-                                <option value="20">20</option>
+                             <select id="selTukarMasukPerPage" onchange="setTukarMasukPerPage(this.value)" class="text-xs border rounded p-1.5 bg-gray-50 outline-none">
+                                <option value="5">5 / Hal</option>
+                                <option value="10">10 / Hal</option>
+                                <option value="20">20 / Hal</option>
                              </select>
                           </div>
                        </div>
 
-                       <div class="table-container">
+                       <div class="table-container flex-1">
                           <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-orange-50">
-                               <tr><th class="p-2 border">Detail Usulan</th><th class="p-2 border">Pengusul</th><th class="p-2 border text-center">Aksi / Status</th></tr>
+                            <thead class="bg-orange-50 border-b border-orange-100">
+                               <tr><th class="p-2 font-bold text-gray-700">Detail Usulan</th><th class="p-2 font-bold text-gray-700">Pengusul</th><th class="p-2 text-center font-bold text-gray-700">Aksi</th></tr>
                             </thead>
-                            <tbody id="tbTukarMasuk" class="divide-y bg-white"><tr><td colspan="3" class="p-2 text-center text-gray-500">Memuat...</td></tr></tbody>
+                            <tbody id="tbTukarMasuk" class="divide-y divide-gray-100 bg-white">
+                               <tr><td colspan="3" class="p-4 text-center text-gray-500">Memuat...</td></tr>
+                            </tbody>
                           </table>
                        </div>
-                       <div class="flex justify-between items-center text-xs mt-3" id="pgTukarMasuk"></div>
+                       <div class="flex justify-between items-center text-xs mt-4 pt-3 border-t" id="pgTukarMasuk"></div>
                     </div>
 
-                    <!-- Usulan Keluar -->
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                       <div class="flex justify-between items-center mb-3 border-b pb-1">
-                          <h3 class="font-bold text-sm text-blue-600">Usulan Keluar (Status Pengajuan Anda)</h3>
-                          <select id="selTukarKeluarPerPage" onchange="setTukarKeluarPerPage(this.value)" class="text-xs border rounded p-1 outline-none">
-                             <option value="5">5</option>
-                             <option value="10">10</option>
-                             <option value="20">20</option>
+                    <!-- KOTAK KANAN: Usulan Keluar -->
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+                       <div class="flex justify-between items-center mb-3 border-b pb-2">
+                          <h3 class="font-bold text-sm text-blue-600 flex items-center gap-1"><i data-lucide="send" class="w-4 h-4"></i> Usulan Keluar (Pengajuan Anda)</h3>
+                          <select id="selTukarKeluarPerPage" onchange="setTukarKeluarPerPage(this.value)" class="text-xs border rounded p-1.5 bg-gray-50 outline-none">
+                             <option value="5">5 / Hal</option>
+                             <option value="10">10 / Hal</option>
+                             <option value="20">20 / Hal</option>
                           </select>
                        </div>
                        
-                       <div class="table-container">
+                       <div class="table-container flex-1">
                           <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-blue-50">
-                               <tr><th class="p-2 border">Detail Usulan</th><th class="p-2 border text-center">Status</th></tr>
+                            <thead class="bg-blue-50 border-b border-blue-100">
+                               <tr><th class="p-2 font-bold text-gray-700">Detail Usulan</th><th class="p-2 font-bold text-gray-700">Penerima</th><th class="p-2 text-center font-bold text-gray-700">Status</th></tr>
                             </thead>
-                            <tbody id="tbTukarKeluar" class="divide-y bg-white"><tr><td colspan="2" class="p-2 text-center text-gray-500">Memuat...</td></tr></tbody>
+                            <tbody id="tbTukarKeluar" class="divide-y divide-gray-100 bg-white">
+                               <tr><td colspan="3" class="p-4 text-center text-gray-500">Memuat...</td></tr>
+                            </tbody>
                           </table>
                        </div>
-                       <div class="flex justify-between items-center text-xs mt-3" id="pgTukarKeluar"></div>
+                       <div class="flex justify-between items-center text-xs mt-4 pt-3 border-t" id="pgTukarKeluar"></div>
                     </div>
+
                  </div>
               </div>
             </div>
@@ -1158,6 +1184,71 @@
            </div>
         </section>
 
+        <!-- SECTION ADMIN: KATA SAPAAN -->
+        <section id="secAdminSapaan" class="hidden-view space-y-6">
+          <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center border-b pb-4 mb-4">
+               <div>
+                  <h2 class="text-xl font-bold text-gray-800">Pengaturan Kata Sapaan (Popup)</h2>
+                  <p class="text-xs text-gray-500 mt-1">Sesuaikan ucapan selamat dan kata mutiara yang akan dilihat karyawan.</p>
+               </div>
+               <button onclick="saveAdminSapaan()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 flex items-center gap-2 shadow-sm transition">
+                  <i data-lucide="save" class="w-4 h-4"></i> Simpan Sapaan
+               </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+               <!-- Card: Sapaan Masuk -->
+               <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div class="flex justify-between items-center mb-3">
+                     <h3 class="font-bold text-blue-600 flex items-center gap-1"><i data-lucide="sunrise" class="w-4 h-4"></i> Sebelum Absen Datang</h3>
+                     <label class="flex items-center cursor-pointer">
+                       <input type="checkbox" id="sapAktifMasuk" class="sr-only peer">
+                       <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 relative"></div>
+                     </label>
+                  </div>
+                  <div class="space-y-3">
+                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><input type="text" id="sapJudulMasuk" class="w-full p-2 text-sm border rounded"></div>
+                     <div><label class="text-xs font-bold text-gray-600">Kata Mutiara / Pesan</label><textarea id="sapPesanMasuk" rows="3" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
+                     <div><label class="text-xs font-bold text-gray-600">URL Gambar Banner</label><input type="text" id="sapGambarMasuk" class="w-full p-2 text-sm border rounded"></div>
+                  </div>
+               </div>
+
+               <!-- Card: Sapaan Pulang -->
+               <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div class="flex justify-between items-center mb-3">
+                     <h3 class="font-bold text-green-600 flex items-center gap-1"><i data-lucide="sunset" class="w-4 h-4"></i> Setelah Absen Pulang</h3>
+                     <label class="flex items-center cursor-pointer">
+                       <input type="checkbox" id="sapAktifPulang" class="sr-only peer">
+                       <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 relative"></div>
+                     </label>
+                  </div>
+                  <div class="space-y-3">
+                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><input type="text" id="sapJudulPulang" class="w-full p-2 text-sm border rounded"></div>
+                     <div><label class="text-xs font-bold text-gray-600">Kata Mutiara / Pesan</label><textarea id="sapPesanPulang" rows="3" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
+                     <div><label class="text-xs font-bold text-gray-600">URL Gambar Banner</label><input type="text" id="sapGambarPulang" class="w-full p-2 text-sm border rounded"></div>
+                  </div>
+               </div>
+
+               <!-- Card: Sapaan Libur -->
+               <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div class="flex justify-between items-center mb-3">
+                     <h3 class="font-bold text-orange-500 flex items-center gap-1"><i data-lucide="coffee" class="w-4 h-4"></i> Jadwal Sedang Libur</h3>
+                     <label class="flex items-center cursor-pointer">
+                       <input type="checkbox" id="sapAktifLibur" class="sr-only peer">
+                       <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 relative"></div>
+                     </label>
+                  </div>
+                  <div class="space-y-3">
+                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><input type="text" id="sapJudulLibur" class="w-full p-2 text-sm border rounded"></div>
+                     <div><label class="text-xs font-bold text-gray-600">Kata Mutiara / Pesan</label><textarea id="sapPesanLibur" rows="3" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
+                     <div><label class="text-xs font-bold text-gray-600">URL Gambar Banner</label><input type="text" id="sapGambarLibur" class="w-full p-2 text-sm border rounded"></div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </section>
+
         <!-- SECTION PROFIL -->
         <section id="secProfil" class="hidden-view space-y-6">
           <div class="bg-white p-6 rounded-xl shadow-sm max-w-2xl mx-auto">
@@ -1207,7 +1298,7 @@
     // ==========================================
     // 1. KONFIGURASI API & FETCH WRAPPER (ANTI HANG)
     // ==========================================
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0g66iG6pgabQok-2zlYLiney2yGXx4SF5UzvbMU1qwwbpiUn4a2njOeAzBet6OXLSDw/exec'; // Pastikan URL Anda benar
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzCnRYj_xMYJd1Gayp86BvWbr811QroU9qy-mDddePUow9ZuITf6G1PK0HcwHb8drwM_Q/exec'; // Pastikan URL Anda benar
 
     async function gasApi(action, params = {}) {
       // Buat controller untuk membatasi waktu loading (Timeout 15 detik)
@@ -1422,7 +1513,8 @@
     }
 
     function showSection(secId) {
-      const sections = ['secKarBeranda', 'secKarKartu', 'secKarJadwal', 'secPengajuan', 'secScanner', 'secLaporan', 'secSetting', 'secAdminKaryawan', 'secAdminShift', 'secAdminJadwal', 'secAdminMonitor', 'secProfil', 'secKoorJadwal'];
+      const sections = ['secKarBeranda', 'secKarKartu', 'secKarJadwal', 'secPengajuan', 'secScanner', 'secLaporan', 'secSetting', 'secAdminKaryawan', 'secAdminShift', 'secAdminJadwal', 'secAdminMonitor', 'secProfil', 'secKoorJadwal', 'secAdminSapaan'];
+      
       sections.forEach(s => {
         const el = document.getElementById(s);
         if(el) el.classList.add('hidden-view');
@@ -1441,6 +1533,7 @@
       if(secId === 'secKoorJadwal') loadKoorJadwal();
       if(secId === 'secPengajuan') { loadRiwayatPengajuan(); checkStatusForPengajuan(); }
       if(secId === 'secSetting') loadSettingData();
+      if(secId === 'secAdminSapaan') loadAdminSapaan(); // TAMBAHAN INI
       if(secId === 'secAdminKaryawan') loadDataKaryawan();
       if(secId === 'secAdminShift') loadDataShift();
       if(secId === 'secAdminJadwal') switchAdminJadwalTab('Seting');
@@ -1571,6 +1664,7 @@
         nav.innerHTML += createMenu('clock', 'Setting Shift', 'secAdminShift');
         nav.innerHTML += createMenu('calendar', 'Setting Jadwal', 'secAdminJadwal');
         nav.innerHTML += createMenu('map-pin', 'Setting Lokasi', 'secSetting');
+        nav.innerHTML += createMenu('message-square', 'Kata Sapaan', 'secAdminSapaan'); // TAMBAHAN INI
         nav.innerHTML += createMenu('user', 'Profil', 'secProfil');
         
         let target = localStorage.getItem('activeSection') || 'secLaporan';
@@ -1708,6 +1802,7 @@
     // FUNGSI LOAD BERANDA UTAMA (1X API CALL)
     // ==========================================
     function loadStatusBeranda() {
+      // 1. Muat tabel bawah paralel (tanpa menunggu status)
       loadDaftarKehadiranHariIni(); 
       
       const badge = document.getElementById('statusAbsenBadge');
@@ -1716,9 +1811,13 @@
       badge.onclick = null;
       badge.title = "";
       
+      // Sembunyikan panel sebelum data termuat
       document.getElementById('panelKonfirmasi').classList.add('hidden-view');
       document.getElementById('panelPulang').classList.add('hidden-view');
-      document.getElementById('panelCatatanAdmin').classList.add('hidden-view'); // Sembunyikan notif saat loading
+      
+      const panelCatatan = document.getElementById('panelCatatanAdmin');
+      if (panelCatatan) panelCatatan.classList.add('hidden-view');
+      
       resetFotoKamera();
       
       if(document.getElementById('btnKonfirmasiMasuk')) document.getElementById('btnKonfirmasiMasuk').disabled = false;
@@ -1727,7 +1826,9 @@
       const tbody = document.getElementById('tbKehadiranHariIni');
       if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-gray-500">Memuat data dari server... <div class="loader !w-3 !h-3 !border-2 !border-t-gray-500 inline-block ml-1"></div></td></tr>';
 
+      // 2. Tarik SEMUA data beranda dalam 1x API Call
       gasApi('getBerandaDataLengkap', { nip: currentUser.nip }).then(res => {
+          // --- PROTEKSI JARINGAN LAMBAT / ERROR ---
           if (!res || res.success === false) {
              badge.innerHTML = "<i data-lucide='wifi-off' class='w-4 h-4 inline-block mr-1 mb-0.5'></i> Jaringan Lambat";
              badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-red-500 cursor-pointer shadow-md hover:bg-red-600 transition";
@@ -1739,24 +1840,27 @@
              return;
           }
 
+          // 3. Render Tabel Bawah
           renderTabelKehadiranUI(res.kehadiran);
 
+          // 4. Proses Status Absen Utama
           let state = res.state;
           let status = state.status;
           isPengajuanLocked = state.isPengajuanLocked;
           badge.innerText = status;
 
-          // LOGIKA MENAMPILKAN KETERANGAN ADMIN
+          // --- LOGIKA MENAMPILKAN KETERANGAN ADMIN ---
           let ketAdmin = state.keteranganAdmin;
-          const panelCatatan = document.getElementById('panelCatatanAdmin');
-          // Filter agar keterangan default spt "Input Admin" atau kosong tidak memunculkan notif error
-          if (ketAdmin && ketAdmin.trim() !== '' && ketAdmin !== '-' && ketAdmin !== 'Input Admin') {
-              document.getElementById('txtCatatanAdmin').innerText = ketAdmin;
-              panelCatatan.classList.remove('hidden-view');
-          } else {
-              panelCatatan.classList.add('hidden-view');
+          if (panelCatatan) {
+              if (ketAdmin && ketAdmin.trim() !== '' && ketAdmin !== '-' && ketAdmin !== 'Input Admin') {
+                  document.getElementById('txtCatatanAdmin').innerText = ketAdmin;
+                  panelCatatan.classList.remove('hidden-view');
+              } else {
+                  panelCatatan.classList.add('hidden-view');
+              }
           }
           
+          // --- PENGATURAN UI PANEL KONFIRMASI / PULANG ---
           if(status === 'Belum Scan' || status === 'Belum Konfirmasi') {
               badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-gray-500";
           }
@@ -1783,6 +1887,7 @@
                      textShift = `<span class="text-red-600 font-bold">${textShift}</span><br><span class="text-[11px] text-red-500 mt-1 flex items-start gap-1"><i data-lucide="alert-circle" class="w-3 h-3 mt-0.5"></i> Ini adalah shift lintas hari yang belum diselesaikan (Checkout).</span>`;
                  }
                  
+                 // Pengaturan Tombol "Pulang Alasan Dinas"
                  if (status === 'Masuk') {
                      if (state.statusPulangDinas === 'Menunggu') {
                          document.getElementById('wrapTombolPulang').classList.add('hidden-view');
@@ -1791,17 +1896,75 @@
                      } else {
                          document.getElementById('wrapTombolPulang').classList.remove('hidden-view');
                          document.getElementById('msgPulangDinas').classList.add('hidden-view');
-                         if (state.statusPulangDinas === 'Ditolak' && document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.remove('hidden-view');
-                         else if (document.getElementById('msgDitolakDinas')) document.getElementById('msgDitolakDinas').classList.add('hidden-view');
+                         if (state.statusPulangDinas === 'Ditolak' && document.getElementById('msgDitolakDinas')) {
+                             document.getElementById('msgDitolakDinas').classList.remove('hidden-view');
+                         } else if (document.getElementById('msgDitolakDinas')) {
+                             document.getElementById('msgDitolakDinas').classList.add('hidden-view');
+                         }
                      }
                  }
-            } else { currentActiveShiftDate = null; }
+            } else { 
+                currentActiveShiftDate = null; 
+            }
             
             if(document.getElementById('txtTanggalShift')) document.getElementById('txtTanggalShift').innerHTML = textShift;
             if(document.getElementById('txtTanggalShiftMasuk')) document.getElementById('txtTanggalShiftMasuk').innerHTML = textShift;
           }
           else if(status === 'Hadir') {
             badge.className = "inline-block px-4 py-2 rounded-full text-white font-bold bg-green-500";
+          }
+
+          // --- LOGIKA MENAMPILKAN KATA SAPAAN POPUP (ANTI-ERROR) ---
+          try {
+              if (res.greetings) {
+                 const now = new Date();
+                 // Format YYYY-MM-DD aman untuk semua browser
+                 const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; 
+                 
+                 let sapaanType = null;
+                 if (status === 'Belum Scan' || status === 'Belum Konfirmasi' || status === 'Pending') {
+                     sapaanType = 'masuk';
+                 } else if (status === 'Hadir') {
+                     sapaanType = 'pulang';
+                 } else if (status === 'Libur') {
+                     sapaanType = 'libur';
+                 }
+
+                 if (sapaanType && res.greetings[sapaanType] && res.greetings[sapaanType].aktif) {
+                     const cacheKey = `greet_${currentUser.nip}_${todayStr}_${sapaanType}`;
+                     
+                     // Jika belum dilihat hari ini untuk status tersebut
+                     if (!localStorage.getItem(cacheKey)) {
+                         const gData = res.greetings[sapaanType];
+                         
+                         const greetTitle = document.getElementById('greetTitle');
+                         const greetMsg = document.getElementById('greetMessage');
+                         const greetImg = document.getElementById('greetImage');
+                         const overlay = document.getElementById('greetingOverlay');
+                         const box = document.getElementById('greetingBox');
+
+                         // Pastikan elemen popup HTML ada di halaman
+                         if (greetTitle && greetMsg && overlay && box) {
+                             greetTitle.innerText = gData.judul || 'Hai!';
+                             greetMsg.innerText = gData.pesan || '';
+                             if (gData.gambar && greetImg) greetImg.src = gData.gambar;
+                             
+                             overlay.classList.remove('hidden-view');
+                             
+                             // Delay sebentar agar animasi scale CSS terlihat
+                             setTimeout(() => {
+                                 box.classList.remove('scale-95', 'opacity-0');
+                                 box.classList.add('scale-100', 'opacity-100');
+                             }, 50);
+
+                             // Tandai agar tidak muncul lagi hari ini
+                             localStorage.setItem(cacheKey, 'true');
+                         }
+                     }
+                 }
+              }
+          } catch (errPopup) {
+              console.error("Error ringan pada Popup Sapaan (Diabaikan):", errPopup);
           }
           
           lucide.createIcons();
@@ -3562,14 +3725,462 @@
     // (Kedua fitur export XLSX & Camera JS API berfungsi client-side murni tanpa butuh di-refactor).
     // Export Excel di biarkan sama persis dengan [source: 2].
 
-    function exportExcel() {
-       // Kode sama dengan sumber asli 
-       // ...
+  function exportExcel() {
+      let tid = toastManager.show("Mengekspor ke Excel...");
+      
+      // Delay sedikit agar UI sempat render notifikasi Toast
+      setTimeout(() => {
+          const bln = parseInt(document.getElementById('lapBulan').value);
+          const thn = parseInt(document.getElementById('lapTahun').value);
+          const blnTxt = document.getElementById('lapBulan').options[document.getElementById('lapBulan').selectedIndex].text;
+          const title = `Rekap_Absensi_${blnTxt}_${thn}.xlsx`;
+          const jHari = new Date(thn, bln, 0).getDate();
+
+          const wb = XLSX.utils.book_new();
+
+          // ==========================================
+          // SHEET 1: MATRIKS KEHADIRAN
+          // ==========================================
+          let ws1_data = [
+             [{ v: `LAPORAN REKAPITULASI MATRIKS BULANAN`, t: 's', s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" } } }],
+             [{ v: `Periode: ${blnTxt} ${thn}`, t: 's', s: { font: { bold: true, sz: 12 }, alignment: { horizontal: "center", vertical: "center" } } }],
+             []
+          ];
+          
+          let header1_r1 = ["NIP", "Nama"];
+          let header1_r2 = ["", ""];
+          for(let i=1; i<=jHari; i++) {
+              header1_r1.push(i.toString());
+              header1_r2.push(getNamaHari(i, bln, thn));
+          }
+          const sumCols1 = ["Pm", "Ps", "DL", "Lp", "H", "Kum H", "S", "I", "Ms", "A", "L", "%"];
+          sumCols1.forEach(c => { header1_r1.push(c); header1_r2.push(""); });
+
+          ws1_data.push(header1_r1.map(h => ({ v: h, t: 's', s: { font: { bold: true }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "F3F4F6" } } } })));
+          ws1_data.push(header1_r2.map((h, idx) => {
+              let color = (h === 'Min') ? "EF4444" : "4B5563"; 
+              let fill = { fgColor: { rgb: "F9FAFB" } };
+              if (idx < 2 || idx >= 2 + jHari) { fill = { fgColor: { rgb: "F3F4F6" } }; color = "000000"; }
+              return { v: h, t: 's', s: { font: { sz: 9, color: {rgb: color} }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: fill } };
+          }));
+
+          let matrix1 = {};
+          dtLaporan1.forEach(d => {
+            if(!matrix1[d.nip]) matrix1[d.nip] = { nama: d.nama, tgl: {}, stats: { H:0, DL:0, Lp:0, Pm:0, Ps:0, S:0, I:0, Ms:0, A:0, L:0 } };
+            let tglNum = parseInt(d.tgl.substring(8,10));
+            let kode = "A"; 
+            let st = d.status.toLowerCase();
+            
+            if(st === 'hadir') {
+                if(d.shift && d.shift.toLowerCase() === 'pm') kode = 'Pm';
+                else if(d.shift && d.shift.toLowerCase() === 'ps') kode = 'Ps';
+                else kode = 'H';
+            } else if(st === 'sakit') kode = "S";
+            else if(st === 'izin') kode = "I";
+            else if(st === 'masuk') kode = "Ms";
+            else if(st === 'dinas luar') kode = "DL";
+            else if(st === 'lepas piket') kode = "Lp";
+            else if(st.includes('libur')) kode = "L";
+            
+            matrix1[d.nip].tgl[tglNum] = kode;
+            if(matrix1[d.nip].stats[kode] !== undefined) matrix1[d.nip].stats[kode]++;
+          });
+
+          let arrM1 = Object.keys(matrix1).map(nip => ({ nip: nip, ...matrix1[nip] }));
+          arrM1.sort((a,b) => a.nama.localeCompare(b.nama));
+
+          arrM1.forEach(row => {
+            let rData = [];
+            rData.push({ v: "'" + row.nip, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+            rData.push({ v: row.nama, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+            
+            for(let i=1; i<=jHari; i++) {
+               let val = row.tgl[i] || '-';
+               let fontStyle = {};
+               if (val === 'H') fontStyle = { bold: true, color: { rgb: "16A34A" } }; // Hijau
+               else if (val === 'DL') fontStyle = { bold: true, color: { rgb: "2563EB" } }; // Biru
+               else if (val === 'Lp') fontStyle = { bold: true, color: { rgb: "9333EA" } }; // Ungu
+               else if (val === 'Ms') fontStyle = { bold: true, color: { rgb: "DC2626" } }; // Merah
+               else if (val === 'A') fontStyle = { bold: true, color: { rgb: "DC2626" } }; // Merah
+               else if (val === 'I' || val === 'S') fontStyle = { bold: true, color: { rgb: "EA580C" } }; // Orange
+               else if (val === 'Pm' || val === 'Ps') fontStyle = { bold: true, color: { rgb: "4F46E5" } }; // Indigo
+               else if (val === 'L') fontStyle = { bold: true, color: { rgb: "6B7280" } }; // Abu-abu
+
+               rData.push({ v: val, t: 's', s: { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, font: fontStyle } });
+            }
+            
+            let kumH = row.stats.H + row.stats.DL + row.stats.Pm + row.stats.Ps + row.stats.Lp;
+            let totHariEfektif = kumH + row.stats.S + row.stats.I + row.stats.A + row.stats.Ms; 
+            let persen = totHariEfektif > 0 ? ((kumH / totHariEfektif) * 100).toFixed(1) + '%' : '0%';
+
+            const createCell = (val, color, isBold, bgColor) => {
+                let s = { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, font: {} };
+                if (color) s.font.color = { rgb: color };
+                if (isBold) s.font.bold = true;
+                if (bgColor) s.fill = { fgColor: { rgb: bgColor } };
+                return { v: val, t: 's', s: s };
+            };
+
+            rData.push(createCell(row.stats.Pm, null, false));
+            rData.push(createCell(row.stats.Ps, null, false));
+            rData.push(createCell(row.stats.DL, null, false));
+            rData.push(createCell(row.stats.Lp, null, false));
+            rData.push(createCell(row.stats.H, "16A34A", true)); 
+            rData.push(createCell(kumH, "2563EB", true, "EFF6FF")); 
+            rData.push(createCell(row.stats.S, "CA8A04", true)); 
+            rData.push(createCell(row.stats.I, "EA580C", true)); 
+            rData.push(createCell(row.stats.Ms, "DC2626", true)); 
+            rData.push(createCell(row.stats.A, "DC2626", true)); 
+            rData.push(createCell(row.stats.L, "6B7280", true)); 
+            rData.push(createCell(persen, null, true));
+            
+            ws1_data.push(rData);
+          });
+
+          let ws1 = XLSX.utils.aoa_to_sheet(ws1_data);
+          let merges1 = [
+              { s: { r: 0, c: 0 }, e: { r: 0, c: header1_r1.length - 1 } }, 
+              { s: { r: 1, c: 0 }, e: { r: 1, c: header1_r1.length - 1 } },
+              { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } }, 
+              { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } }  
+          ];
+          for(let k=0; k<sumCols1.length; k++) {
+              merges1.push({ s: { r: 3, c: 2 + jHari + k }, e: { r: 4, c: 2 + jHari + k } });
+          }
+          ws1['!merges'] = merges1;
+
+          let ws1_cols = [{ wch: 20 }, { wch: 30 }];
+          for(let i=1; i<=jHari; i++) ws1_cols.push({ wch: 4 });
+          ws1_cols.push({wch: 5}, {wch: 5}, {wch: 5}, {wch: 5}, {wch: 5}, {wch: 8}, {wch: 5}, {wch: 5}, {wch: 5}, {wch: 5}, {wch: 8});
+          ws1['!cols'] = ws1_cols;
+          XLSX.utils.book_append_sheet(wb, ws1, "Matriks Kehadiran");
+
+          // ==========================================
+          // SHEET 2: MATRIKS APEL
+          // ==========================================
+          let ws2_data = [
+             [{ v: `LAPORAN MATRIKS APEL KEDATANGAN`, t: 's', s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" } } }],
+             [{ v: `Periode: ${blnTxt} ${thn}`, t: 's', s: { font: { bold: true, sz: 12 }, alignment: { horizontal: "center", vertical: "center" } } }],
+             []
+          ];
+          
+          let header2_r1 = ["NIP", "Nama"];
+          let header2_r2 = ["", ""];
+          for(let i=1; i<=jHari; i++) {
+              header2_r1.push(i.toString());
+              header2_r2.push(getNamaHari(i, bln, thn));
+          }
+          const sumCols2 = ["Ap", "T", "-"];
+          sumCols2.forEach(c => { header2_r1.push(c); header2_r2.push(""); });
+
+          ws2_data.push(header2_r1.map(h => ({ v: h, t: 's', s: { font: { bold: true }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "F3F4F6" } } } })));
+          ws2_data.push(header2_r2.map((h, idx) => {
+              let color = (h === 'Min') ? "EF4444" : "4B5563"; 
+              let fill = { fgColor: { rgb: "F9FAFB" } };
+              if (idx < 2 || idx >= 2 + jHari) { fill = { fgColor: { rgb: "F3F4F6" } }; color = "000000"; }
+              return { v: h, t: 's', s: { font: { sz: 9, color: {rgb: color} }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: fill } };
+          }));
+
+          let matrix2 = {};
+          dtLaporan1.forEach(d => {
+            if(!matrix2[d.nip]) matrix2[d.nip] = { nama: d.nama, tgl: {}, stats: { Ap:0, T:0, Kosong:0 } };
+            let tglNum = parseInt(d.tgl.substring(8,10));
+            let kode = "-"; 
+            if(d.apel === 'Ap') kode = 'Ap';
+            else if(d.apel === 'T') kode = 'T';
+            else if(d.status && d.status.toLowerCase() === 'alpa') kode = 'T';
+            
+            matrix2[d.nip].tgl[tglNum] = kode;
+            if(kode === 'Ap') matrix2[d.nip].stats.Ap++;
+            else if(kode === 'T') matrix2[d.nip].stats.T++;
+            else matrix2[d.nip].stats.Kosong++;
+          });
+
+          let arrM2 = Object.keys(matrix2).map(nip => ({ nip: nip, ...matrix2[nip] }));
+          arrM2.sort((a,b) => a.nama.localeCompare(b.nama));
+
+          arrM2.forEach(row => {
+            let rData = [];
+            rData.push({ v: "'" + row.nip, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+            rData.push({ v: row.nama, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+            
+            for(let i=1; i<=jHari; i++) {
+               let val = row.tgl[i] || '-';
+               let cellStyle = { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, font: {} };
+               if (val === 'T') { cellStyle.font.color = { rgb: "DC2626" }; cellStyle.font.bold = true; } // Merah
+               else if (val === 'Ap') { cellStyle.font.color = { rgb: "16A34A" }; cellStyle.font.bold = true; } // Hijau
+               else { cellStyle.font.color = { rgb: "9CA3AF" }; } 
+               rData.push({ v: val, t: 's', s: cellStyle });
+            }
+            
+            const createCell = (val, color, isBold) => {
+                let s = { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, font: {} };
+                if (color) s.font.color = { rgb: color };
+                if (isBold) s.font.bold = true;
+                return { v: val, t: 's', s: s };
+            };
+
+            rData.push(createCell(row.stats.Ap, "16A34A", true));
+            rData.push(createCell(row.stats.T, "DC2626", true));
+            rData.push(createCell(row.stats.Kosong, "6B7280", true));
+            ws2_data.push(rData);
+          });
+
+          let ws2 = XLSX.utils.aoa_to_sheet(ws2_data);
+          let merges2 = [
+              { s: { r: 0, c: 0 }, e: { r: 0, c: header2_r1.length - 1 } }, 
+              { s: { r: 1, c: 0 }, e: { r: 1, c: header2_r1.length - 1 } },
+              { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } }, 
+              { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } }  
+          ];
+          for(let k=0; k<sumCols2.length; k++) {
+              merges2.push({ s: { r: 3, c: 2 + jHari + k }, e: { r: 4, c: 2 + jHari + k } });
+          }
+          ws2['!merges'] = merges2;
+
+          let ws2_cols = [{ wch: 20 }, { wch: 30 }];
+          for(let i=1; i<=jHari; i++) ws2_cols.push({ wch: 4 });
+          ws2_cols.push({wch: 5}, {wch: 5}, {wch: 5});
+          ws2['!cols'] = ws2_cols;
+          XLSX.utils.book_append_sheet(wb, ws2, "Matriks Apel");
+
+          // ==========================================
+          // SHEET 3: MATRIKS DETAIL WAKTU
+          // ==========================================
+          let ws3_data = [
+             [{ v: `LAPORAN DETAIL WAKTU KEDATANGAN & KEPULANGAN (MATRIKS)`, t: 's', s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" } } }],
+             [{ v: `Periode: ${blnTxt} ${thn}`, t: 's', s: { font: { bold: true, sz: 12 }, alignment: { horizontal: "center", vertical: "center" } } }],
+             []
+          ];
+
+          let header3_r1 = ["NIP", "Nama"];
+          let header3_r2 = ["", ""];
+          for(let i=1; i<=jHari; i++) {
+              header3_r1.push(i.toString());
+              header3_r2.push(getNamaHari(i, bln, thn));
+          }
+
+          ws3_data.push(header3_r1.map(h => ({ v: h, t: 's', s: { font: { bold: true }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "F3F4F6" } } } })));
+          ws3_data.push(header3_r2.map((h, idx) => {
+              let color = (h === 'Min') ? "EF4444" : "4B5563"; 
+              let fill = { fgColor: { rgb: "F9FAFB" } };
+              if (idx < 2) { fill = { fgColor: { rgb: "F3F4F6" } }; color = "000000"; }
+              return { v: h, t: 's', s: { font: { sz: 9, color: {rgb: color} }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: fill } };
+          }));
+
+          let matrix3 = {};
+          dtLaporan1.forEach(d => {
+            if(!matrix3[d.nip]) matrix3[d.nip] = { nama: d.nama, tgl: {} };
+            let tglNum = parseInt(d.tgl.substring(8,10));
+            let m = d.masuk || '-';
+            let p = d.pulang || '-';
+            matrix3[d.nip].tgl[tglNum] = { text: `${m}\n${p}` };
+          });
+
+          let arrM3 = Object.keys(matrix3).map(nip => ({ nip: nip, ...matrix3[nip] }));
+          arrM3.sort((a,b) => a.nama.localeCompare(b.nama));
+
+          arrM3.forEach(row => {
+            let rData = [];
+            rData.push({ v: "'" + row.nip, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+            rData.push({ v: row.nama, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+            
+            for(let i=1; i<=jHari; i++) {
+               let val = row.tgl[i];
+               if(!val) {
+                  rData.push({ v: '-', t: 's', s: { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, font: { color: { rgb: "9CA3AF" } } } });
+               } else {
+                  rData.push({ v: val.text, t: 's', s: { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center", wrapText: true }, font: { sz: 9 } } });
+               }
+            }
+            ws3_data.push(rData);
+          });
+
+          let ws3 = XLSX.utils.aoa_to_sheet(ws3_data);
+          let merges3 = [
+              { s: { r: 0, c: 0 }, e: { r: 0, c: header3_r1.length - 1 } }, 
+              { s: { r: 1, c: 0 }, e: { r: 1, c: header3_r1.length - 1 } },
+              { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } }, 
+              { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } }  
+          ];
+          ws3['!merges'] = merges3;
+
+          let ws3_cols = [{ wch: 20 }, { wch: 30 }];
+          for(let i=1; i<=jHari; i++) ws3_cols.push({ wch: 8 });
+          ws3['!cols'] = ws3_cols;
+          XLSX.utils.book_append_sheet(wb, ws3, "Matriks Detail Waktu");
+
+          // ==========================================
+          // SHEET 4: DETAIL WAKTU (LIST)
+          // ==========================================
+          let ws4_data = [
+            [{ v: `LAPORAN DETAIL WAKTU KEDATANGAN & KEPULANGAN`, t: 's', s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" } } }],
+            [{ v: `Periode: ${blnTxt} ${thn}`, t: 's', s: { font: { bold: true, sz: 12 }, alignment: { horizontal: "center", vertical: "center" } } }],
+            []
+          ];
+
+          let header4 = ["Tanggal", "NIP", "Nama", "Masuk", "Pulang", "Status", "Terlambat (Mnt)", "Pulang Cepat (Mnt)"];
+          ws4_data.push(header4.map(h => ({ v: h, t: 's', s: { font: { bold: true }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "F3F4F6" } } } })));
+
+          let grouped = {};
+          dtLaporan1.forEach(d => {
+            if(!grouped[d.nip]) grouped[d.nip] = { nama: d.nama, data: [], totTelat: 0, totCepat: 0 };
+            grouped[d.nip].data.push(d);
+            grouped[d.nip].totTelat += (parseInt(d.terlambat) || 0);
+            grouped[d.nip].totCepat += (parseInt(d.cepat) || 0);
+          });
+
+          let sortedKeys4 = Object.keys(grouped).sort((a,b) => grouped[a].nama.localeCompare(grouped[b].nama));
+          
+
+          sortedKeys4.forEach(nip => {
+            let g = grouped[nip];
+
+            // TAMBAHKAN BARIS INI: Urutkan data per karyawan berdasarkan tanggal (Menaik/1-31)
+            g.data.sort((a, b) => a.tgl.localeCompare(b.tgl));
+
+            g.data.forEach(d => {
+              let rData = [];
+              rData.push({ v: d.tgl.substring(0,10), t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+              rData.push({ v: "'" + d.nip, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+              rData.push({ v: d.nama, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+              rData.push({ v: d.masuk, t: 's', s: { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" } } });
+              rData.push({ v: d.pulang, t: 's', s: { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" } } });
+              
+              let sCol = null;
+              if(d.status === 'Hadir') sCol = "16A34A";
+              else if(d.status === 'Masuk') sCol = "2563EB";
+              else if(d.status === 'Pending') sCol = "CA8A04";
+              else if(d.status === 'Sakit' || d.status === 'Izin' || d.status === 'Alpa') sCol = "DC2626";
+
+              let stStyle = { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, font: {} };
+              if(sCol) { stStyle.font.color = { rgb: sCol }; stStyle.font.bold = true; }
+              rData.push({ v: d.status, t: 's', s: stStyle });
+
+              let tStyle = { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, font: {} };
+              if(d.terlambat > 0) { tStyle.font.color = { rgb: "EF4444" }; tStyle.font.bold = true; }
+              rData.push({ v: d.terlambat > 0 ? d.terlambat : '-', t: 's', s: tStyle });
+
+              let cStyle = { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, font: {} };
+              if(d.cepat > 0) { cStyle.font.color = { rgb: "D97706" }; cStyle.font.bold = true; } 
+              rData.push({ v: d.cepat > 0 ? d.cepat : '-', t: 's', s: cStyle });
+
+              ws4_data.push(rData);
+            });
+            
+            let trData = [
+              { v: "", t: 's', s: { border: getBorderStyle() } },
+              { v: "", t: 's', s: { border: getBorderStyle() } },
+              { v: `TOTAL ${g.nama.toUpperCase()}`, t: 's', s: { font: { bold: true }, border: getBorderStyle(), alignment: { horizontal: "right", vertical: "center" }, fill: { fgColor: { rgb: "EFF6FF" } } } },
+              { v: "", t: 's', s: { border: getBorderStyle(), fill: { fgColor: { rgb: "EFF6FF" } } } },
+              { v: "", t: 's', s: { border: getBorderStyle(), fill: { fgColor: { rgb: "EFF6FF" } } } },
+              { v: "", t: 's', s: { border: getBorderStyle(), fill: { fgColor: { rgb: "EFF6FF" } } } },
+              { v: g.totTelat > 0 ? g.totTelat : '-', t: 's', s: { font: { bold: true, color: {rgb: "DC2626"} }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "EFF6FF" } } } },
+              { v: g.totCepat > 0 ? g.totCepat : '-', t: 's', s: { font: { bold: true, color: {rgb: "D97706"} }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "EFF6FF" } } } }
+            ];
+            ws4_data.push(trData);
+
+            let sepData = Array(8).fill({ v: "", t: 's', s: {} });
+            ws4_data.push(sepData);
+          });
+
+          let ws4 = XLSX.utils.aoa_to_sheet(ws4_data);
+          ws4['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }];
+          ws4['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+          XLSX.utils.book_append_sheet(wb, ws4, "Detail Waktu");
+
+          XLSX.writeFile(wb, title);
+          toastManager.finish(tid, true, "File Excel berhasil diunduh");
+      }, 100);
     }
-    function downloadJadwalExcel() {
-       // Kode sama dengan sumber asli
-       // ...
+      // ==========================================
+// EXPORT JADWAL SHIFT ADMIN KE EXCEL
+// ==========================================
+function downloadJadwalExcel() {
+  if (!listKaryawanGlobal || listKaryawanGlobal.length === 0) {
+    return alert("Silahkan klik 'Tampilkan Jadwal' terlebih dahulu sebelum mendownload!");
+  }
+
+  // Simpan inputan terbaru ke variabel global sebelum di-export
+  saveCurrentJadwalInputsToGlobal();
+
+  let tid = toastManager.show("Mengekspor Jadwal ke Excel...");
+
+  setTimeout(() => {
+    const bln = parseInt(document.getElementById('jadBulan').value);
+    const thn = parseInt(document.getElementById('jadTahun').value);
+    const blnTxt = document.getElementById('jadBulan').options[document.getElementById('jadBulan').selectedIndex].text;
+    const jHari = new Date(thn, bln, 0).getDate();
+    const title = `Jadwal_Shift_${blnTxt}_${thn}.xlsx`;
+
+    const wb = XLSX.utils.book_new();
+
+    let ws_data = [
+      [{ v: `JADWAL SHIFT KARYAWAN`, t: 's', s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" } } }],
+      [{ v: `Periode: ${blnTxt} ${thn}`, t: 's', s: { font: { bold: true, sz: 12 }, alignment: { horizontal: "center", vertical: "center" } } }],
+      []
+    ];
+
+    let header_r1 = ["No", "Nama", "NIP", "Unit"];
+    let header_r2 = ["", "", "", ""];
+    
+    // Setup header tanggal (1-31)
+    for(let i = 1; i <= jHari; i++) {
+        header_r1.push(i.toString());
+        header_r2.push(getNamaHari(i, bln, thn));
     }
+
+    // Apply style untuk baris pertama header
+    ws_data.push(header_r1.map(h => ({ v: h, t: 's', s: { font: { bold: true }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "F3F4F6" } } } })));
+    
+    // Apply style untuk baris kedua header (Nama Hari)
+    ws_data.push(header_r2.map((h, idx) => {
+        let color = (h === 'Min') ? "EF4444" : "4B5563"; // Merah untuk hari minggu
+        let fill = { fgColor: { rgb: "F9FAFB" } };
+        if (idx < 4) { fill = { fgColor: { rgb: "F3F4F6" } }; color = "000000"; }
+        return { v: h, t: 's', s: { font: { sz: 9, color: {rgb: color} }, border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" }, fill: fill } };
+    }));
+
+    // Isi data setiap karyawan
+    listKaryawanGlobal.forEach((u, index) => {
+       let jRow = globalJadwalBulanData.find(x => x.nip === u.nip) || { dates: {} };
+       let rData = [];
+       
+       rData.push({ v: index + 1, t: 'n', s: { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" } } });
+       rData.push({ v: u.nama, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+       rData.push({ v: "'" + u.nip, t: 's', s: { border: getBorderStyle(), alignment: { vertical: "center" } } });
+       rData.push({ v: u.unit || '-', t: 's', s: { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" } } });
+
+       for(let i = 1; i <= jHari; i++) {
+          let val = jRow.dates[i] || '-';
+          rData.push({ v: val, t: 's', s: { border: getBorderStyle(), alignment: { horizontal: "center", vertical: "center" } } });
+       }
+       ws_data.push(rData);
+    });
+
+    let ws = XLSX.utils.aoa_to_sheet(ws_data);
+    
+    // Konfigurasi Merge (Judul dan Header atas-bawah)
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: header_r1.length - 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: header_r1.length - 1 } },
+      { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } },
+      { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } },
+      { s: { r: 3, c: 2 }, e: { r: 4, c: 2 } },
+      { s: { r: 3, c: 3 }, e: { r: 4, c: 3 } }
+    ];
+
+    // Konfigurasi Lebar Kolom
+    let ws_cols = [{ wch: 5 }, { wch: 30 }, { wch: 20 }, { wch: 15 }];
+    for(let i = 1; i <= jHari; i++) ws_cols.push({ wch: 5 });
+    ws['!cols'] = ws_cols;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Jadwal Shift");
+    XLSX.writeFile(wb, title);
+
+    toastManager.finish(tid, true, "Berhasil di-download");
+  }, 100);
+}
     
     function handlePhotoCapture(input, previewId, base64Id) {
       if (input.files && input.files[0]) {
@@ -3802,6 +4413,50 @@
 
         setTimeout(() => { toastManager.finish(tid, true, "Foto berhasil direkam!"); }, 500);
         closeLiveCamera();
+    }
+
+    function loadAdminSapaan() {
+       let tid = toastManager.show("Memuat data sapaan...");
+       gasApi('getGreetingsSettings').then(data => {
+          toastManager.finish(tid, true, "Selesai");
+          if (!data) return;
+          
+          ['masuk', 'pulang', 'libur'].forEach(tipe => {
+             let capTipe = tipe.charAt(0).toUpperCase() + tipe.slice(1);
+             if (data[tipe]) {
+                 document.getElementById('sapAktif' + capTipe).checked = data[tipe].aktif;
+                 document.getElementById('sapJudul' + capTipe).value = data[tipe].judul;
+                 document.getElementById('sapPesan' + capTipe).value = data[tipe].pesan;
+                 document.getElementById('sapGambar' + capTipe).value = data[tipe].gambar;
+             }
+          });
+       });
+    }
+
+    function saveAdminSapaan() {
+       let payload = {};
+       ['masuk', 'pulang', 'libur'].forEach(tipe => {
+           let capTipe = tipe.charAt(0).toUpperCase() + tipe.slice(1);
+           payload[tipe] = {
+               aktif: document.getElementById('sapAktif' + capTipe).checked,
+               judul: document.getElementById('sapJudul' + capTipe).value,
+               pesan: document.getElementById('sapPesan' + capTipe).value,
+               gambar: document.getElementById('sapGambar' + capTipe).value
+           };
+       });
+       
+       let tid = toastManager.show("Menyimpan Sapaan...");
+       gasApi('saveGreetingsSettings', { payload }).then(res => {
+          toastManager.finish(tid, res.success, res.message);
+       });
+    }
+
+    function closeGreeting() {
+       const overlay = document.getElementById('greetingOverlay');
+       const box = document.getElementById('greetingBox');
+       box.classList.remove('scale-100', 'opacity-100');
+       box.classList.add('scale-95', 'opacity-0');
+       setTimeout(() => { overlay.classList.add('hidden-view'); }, 300);
     }
 </script>
 </body>
