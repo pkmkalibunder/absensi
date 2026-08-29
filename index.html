@@ -1222,7 +1222,7 @@
                      </label>
                   </div>
                   <div class="space-y-3">
-                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><input type="text" id="sapJudulMasuk" class="w-full p-2 text-sm border rounded"></div>
+                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><textarea id="sapJudulMasuk" rows="2" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
                      <div><label class="text-xs font-bold text-gray-600">Kata Mutiara / Pesan</label><textarea id="sapPesanMasuk" rows="3" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
                      <div><label class="text-xs font-bold text-gray-600">URL Gambar Banner</label><input type="text" id="sapGambarMasuk" class="w-full p-2 text-sm border rounded"></div>
                   </div>
@@ -1238,7 +1238,7 @@
                      </label>
                   </div>
                   <div class="space-y-3">
-                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><input type="text" id="sapJudulSetelahMasuk" class="w-full p-2 text-sm border rounded"></div>
+                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><textarea id="sapJudulSetelahMasuk" rows="2" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
                      <div><label class="text-xs font-bold text-gray-600">Kata Mutiara / Pesan</label><textarea id="sapPesanSetelahMasuk" rows="3" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
                      <div><label class="text-xs font-bold text-gray-600">URL Gambar Banner</label><input type="text" id="sapGambarSetelahMasuk" class="w-full p-2 text-sm border rounded"></div>
                   </div>
@@ -1254,7 +1254,7 @@
                      </label>
                   </div>
                   <div class="space-y-3">
-                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><input type="text" id="sapJudulPulang" class="w-full p-2 text-sm border rounded"></div>
+                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><textarea id="sapJudulPulang" rows="2" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
                      <div><label class="text-xs font-bold text-gray-600">Kata Mutiara / Pesan</label><textarea id="sapPesanPulang" rows="3" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
                      <div><label class="text-xs font-bold text-gray-600">URL Gambar Banner</label><input type="text" id="sapGambarPulang" class="w-full p-2 text-sm border rounded"></div>
                   </div>
@@ -1270,7 +1270,7 @@
                      </label>
                   </div>
                   <div class="space-y-3">
-                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><input type="text" id="sapJudulLibur" class="w-full p-2 text-sm border rounded"></div>
+                     <div><label class="text-xs font-bold text-gray-600">Judul Utama</label><textarea id="sapJudulLibur" rows="2" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
                      <div><label class="text-xs font-bold text-gray-600">Kata Mutiara / Pesan</label><textarea id="sapPesanLibur" rows="3" class="w-full p-2 text-sm border rounded resize-none"></textarea></div>
                      <div><label class="text-xs font-bold text-gray-600">URL Gambar Banner</label><input type="text" id="sapGambarLibur" class="w-full p-2 text-sm border rounded"></div>
                   </div>
@@ -1988,13 +1988,18 @@
                          const box = document.getElementById('greetingBox');
 
                          if (greetTitle && greetMsg && overlay && box) {
-                             // REPLACE TAG {nama} DENGAN NAMA KARYAWAN
+                             // REPLACE TAG {nama} JADI TEBAL (BOLD) DAN ENTER JADI PARAGRAF BARU (<br>)
                              let myName = currentUser.nama || '';
                              let jdl = gData.judul || 'Hai {nama}!';
                              let psn = gData.pesan || '';
                              
-                             greetTitle.innerHTML = jdl.replace(/{nama}/gi, myName);
-                             greetMsg.innerHTML = psn.replace(/{nama}/gi, myName);
+                             // 1. Ganti {nama} menjadi <b>Nama Karyawan</b>
+                             // 2. Ganti karakter newline (\n) dari tombol Enter menjadi tag <br>
+                             let finalJudul = jdl.replace(/{nama}/gi, `<b class="font-black text-yellow-300 drop-shadow-md">${myName}</b>`).replace(/\n/g, '<br>');
+                             let finalPesan = psn.replace(/{nama}/gi, `<b class="text-gray-800">${myName}</b>`).replace(/\n/g, '<br><br>');
+                             
+                             greetTitle.innerHTML = finalJudul;
+                             greetMsg.innerHTML = finalPesan;
                              
                              if (gData.gambar && greetImg) greetImg.src = gData.gambar;
                              
