@@ -77,8 +77,8 @@
       
       <!-- Teks Kutipan (Bisa di-scroll jika kata mutiara dari admin sangat panjang) -->
       <div class="p-6 md:p-8 text-center overflow-y-auto">
-        <i data-lucide="quote" class="w-8 h-8 md:w-10 md:h-10 text-blue-200 mx-auto mb-3 md:mb-4"></i>
-        <p id="greetMessage" class="text-gray-600 text-sm md:text-base lg:text-lg italic font-medium leading-relaxed mb-6 md:mb-8"></p>
+        <i class="w-8 h-8 md:w-10 md:h-10 text-blue-200 mx-auto mb-3 md:mb-4"></i>
+        <p id="greetMessage" class="text-gray-600 text-sm md:text-base lg:text-lg italic font-medium leading-snug mb-5"></p>
         
         <!-- Tombol (Penuh di HP, pas di tengah pada PC) -->
         <button onclick="closeGreeting()" class="bg-blue-600 text-white px-8 py-3 md:px-12 md:py-3.5 rounded-full font-bold shadow-md hover:bg-blue-700 transition transform hover:-translate-y-1 w-full sm:w-auto text-sm md:text-base">
@@ -1996,7 +1996,7 @@
                              // 1. Ganti {nama} menjadi <b>Nama Karyawan</b>
                              // 2. Ganti karakter newline (\n) dari tombol Enter menjadi tag <br>
                              let finalJudul = jdl.replace(/{nama}/gi, `<b class="font-black text-yellow-300 drop-shadow-md">${myName}</b>`).replace(/\n/g, '<br>');
-                             let finalPesan = psn.replace(/{nama}/gi, `<b class="text-gray-800">${myName}</b>`).replace(/\n/g, '<br><br>');
+                             let finalPesan = psn.replace(/{nama}/gi, `<b class="text-gray-800">${myName}</b>`).replace(/\n/g, '<br>');
                              
                              greetTitle.innerHTML = finalJudul;
                              greetMsg.innerHTML = finalPesan;
